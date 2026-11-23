@@ -1171,7 +1171,7 @@
             const client = clients.find(c => String(c.id) === String(id));
             if (!client) return;
 
-            // تضمين بيانات العميل فقط + هوستات اليوم في الرابط المشفر
+            // تضمين بيانات العميل فقط + هوستات اليوم في الرابط المشفر بدون باراميترات عربية طويلة
             const compactPayload = {
                 a: client.app || 'ibo',
                 n: client.name,
@@ -1184,17 +1184,14 @@
 
             const encoded = encodePayloadUTF8(compactPayload);
             const urlObj = new URL(SHARE_BASE_URL);
-            urlObj.searchParams.set('client', client.name.trim());
             urlObj.searchParams.set('c', encoded);
 
             const shareUrl = urlObj.toString();
-            copyText(shareUrl, `تم نسخ رابط العميل (${client.name})`);
+            copyText(shareUrl, `تم نسخ رابط العميل (${client.name}) جاهز للإرسال`);
 
             if (navigator.share) {
                 try {
                     await navigator.share({
-                        title: `بيانات اشتراك - ${client.name}`,
-                        text: `بيانات اشتراك ${client.name}`,
                         url: shareUrl
                     });
                 } catch (err) {
