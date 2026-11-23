@@ -97,34 +97,64 @@
                     إلغاء التعديل ✕
                 </button>
             </div>
-            <form id="clientForm" onsubmit="saveClient(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <form id="clientForm" onsubmit="saveClient(event)" class="space-y-4">
                 <input type="hidden" id="editIdInput" value="">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">القسم / التطبيق</label>
-                    <select id="appInput"
-                        class="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold bg-slate-50">
-                        <option value="ibo">قسم IBO Player</option>
-                        <option value="shamel">قسم Shamel TV</option>
-                    </select>
+                
+                <!-- القسم الأول: بيانات العميل والتطبيق -->
+                <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100 space-y-3">
+                    <div class="text-xs font-extrabold text-indigo-800 flex items-center gap-1.5">
+                        <span>📱 بيانات العميل (التطبيق)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">القسم / التطبيق</label>
+                            <select id="appInput"
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold bg-white">
+                                <option value="ibo">قسم IBO Player</option>
+                                <option value="shamel">قسم Shamel TV</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">اسم العميل</label>
+                            <input type="text" id="nameInput" required placeholder="مثال: أبو خالد"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">الماك أدريس (MAC)</label>
+                            <input type="text" id="macInput" required maxlength="17" dir="ltr" placeholder="00:1A:79:XX:XX:XX"
+                                oninput="formatMac(this)"
+                                style="direction: ltr; unicode-bidi: isolate;"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm mono uppercase text-left bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">الرقم السري للتطبيق (Key)</label>
+                            <input type="text" id="keyInput" required dir="ltr" placeholder="123456"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm mono text-left bg-white">
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">اسم العميل</label>
-                    <input type="text" id="nameInput" required placeholder="مثال: أبو خالد"
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm">
+
+                <!-- القسم الثاني: بيانات الاشتراك (رقم الاشتراك + الرقم السري للاشتراك) -->
+                <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-200/70 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-1">
+                        <span class="text-xs font-extrabold text-amber-900">🔑 بيانات الاشتراك (مع هوستات اليوم)</span>
+                        <span class="text-[11px] text-amber-700 font-semibold">الهوست يُضاف تلقائياً من الأعلى</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">رقم الاشتراك (Username)</label>
+                            <input type="text" id="subNumInput" dir="ltr" placeholder="987654321"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-amber-500 outline-none text-sm mono text-left bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">الرقم السري للاشتراك (Password)</label>
+                            <input type="text" id="subPassInput" dir="ltr" placeholder="pass12345"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-amber-500 outline-none text-sm mono text-left bg-white">
+                        </div>
+                    </div>
                 </div>
+
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">الماك أدريس (MAC)</label>
-                    <input type="text" id="macInput" required maxlength="17" dir="ltr" placeholder="00:1A:79:XX:XX:XX"
-                        oninput="formatMac(this)"
-                        style="direction: ltr; unicode-bidi: isolate;"
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm mono uppercase text-left bg-slate-50">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">الرقم السري (Key)</label>
-                    <input type="text" id="keyInput" required dir="ltr" placeholder="123456"
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm mono text-left bg-slate-50">
-                </div>
-                <div class="sm:col-span-4">
                     <button type="submit" id="submitBtn"
                         class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-sm shadow-sm transition">
                         + حفظ العميل
@@ -397,6 +427,8 @@
                                 name: item.name,
                                 mac: item.mac,
                                 key: item.key,
+                                subNum: item.subNum || '',
+                                subPass: item.subPass || '',
                                 createdAt: Number(item.createdAt) || Date.now()
                             });
                         }
@@ -466,6 +498,8 @@
             document.getElementById('nameInput').value = client.name;
             document.getElementById('macInput').value = client.mac;
             document.getElementById('keyInput').value = client.key;
+            document.getElementById('subNumInput').value = client.subNum || '';
+            document.getElementById('subPassInput').value = client.subPass || '';
 
             document.getElementById('formTitle').textContent = 'تعديل بيانات العميل: ' + client.name;
             document.getElementById('cancelEditBtn').classList.remove('hidden');
@@ -482,6 +516,8 @@
             document.getElementById('nameInput').value = '';
             document.getElementById('macInput').value = '';
             document.getElementById('keyInput').value = '';
+            document.getElementById('subNumInput').value = '';
+            document.getElementById('subPassInput').value = '';
 
             document.getElementById('formTitle').textContent = 'إضافة عميل جديد';
             document.getElementById('cancelEditBtn').classList.add('hidden');
@@ -497,12 +533,14 @@
             const name = document.getElementById('nameInput').value.trim();
             const mac = document.getElementById('macInput').value.trim().toUpperCase();
             const key = document.getElementById('keyInput').value.trim();
+            const subNum = document.getElementById('subNumInput').value.trim();
+            const subPass = document.getElementById('subPassInput').value.trim();
             if (!name || !mac || !key) return;
 
             if (editId) {
                 const idx = clients.findIndex(c => String(c.id) === String(editId));
                 if (idx !== -1) {
-                    clients[idx] = { ...clients[idx], app: appType, name, mac, key };
+                    clients[idx] = { ...clients[idx], app: appType, name, mac, key, subNum, subPass };
                     saveLocalBackup();
                 }
                 setSection(appType);
@@ -512,7 +550,7 @@
                 if (cloudReady && currentUser) {
                     try {
                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', String(editId)), {
-                            app: appType, name, mac, key
+                            app: appType, name, mac, key, subNum, subPass
                         });
                     } catch (err) {
                         console.error("Cloud update error:", err);
@@ -526,6 +564,8 @@
                     name,
                     mac,
                     key,
+                    subNum,
+                    subPass,
                     createdAt: Date.now()
                 };
 
@@ -542,6 +582,8 @@
                             name,
                             mac,
                             key,
+                            subNum,
+                            subPass,
                             createdAt: newItem.createdAt
                         });
                     } catch (err) {
@@ -599,7 +641,10 @@
             const filtered = clients.filter(c => {
                 const clientApp = c.app || 'ibo';
                 const matchesSection = clientApp === currentSection;
-                const matchesSearch = c.name.toLowerCase().includes(q) || c.mac.toLowerCase().includes(q);
+                const matchesSearch = c.name.toLowerCase().includes(q) ||
+                    c.mac.toLowerCase().includes(q) ||
+                    (c.subNum && c.subNum.toLowerCase().includes(q)) ||
+                    (c.subPass && c.subPass.toLowerCase().includes(q));
                 return matchesSection && matchesSearch;
             });
 
@@ -613,21 +658,21 @@
             container.innerHTML = filtered.map(c => {
                 const appInfo = APP_CONFIG[c.app || 'ibo'];
                 const hostsHtml = dailyHosts.length > 0
-                    ? `<div class="space-y-1.5">
-                        ${dailyHosts.map((h, idx) => `
-                            <div class="bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/80 flex items-center justify-between gap-2">
-                                <div class="overflow-hidden">
-                                    <span class="text-[11px] text-amber-800 block font-extrabold">🌐 ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}</span>
-                                    <code class="text-xs sm:text-sm font-bold text-slate-800 mono block truncate" dir="ltr">${escapeHtml(h.url)}</code>
-                                </div>
-                                <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
-                                    class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 transition">
-                                    نسخ الهوست
-                                </button>
+                    ? dailyHosts.map((h, idx) => `
+                        <div class="bg-white/90 p-2 rounded-xl border border-amber-200/80 flex items-center justify-between gap-2">
+                            <div class="overflow-hidden">
+                                <span class="text-[10px] text-amber-800 block font-extrabold">🌐 ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}</span>
+                                <code class="text-xs font-bold text-slate-800 mono block truncate" dir="ltr">${escapeHtml(h.url)}</code>
                             </div>
-                        `).join('')}
-                       </div>`
-                    : '';
+                            <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
+                                class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 transition">
+                                نسخ الهوست
+                            </button>
+                        </div>
+                    `).join('')
+                    : '<div class="text-[11px] text-amber-800/70 px-1">لا يوجد هوست مضاف بالأعلى حالياً</div>';
+
+                const hasSubDetails = c.subNum || c.subPass;
 
                 return `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col gap-3">
@@ -655,32 +700,69 @@
                         </div>
                     </div>
 
-                    ${hostsHtml}
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <!-- صف الماك -->
-                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 flex items-center justify-between gap-2">
-                            <div class="overflow-hidden">
-                                <span class="text-[11px] text-slate-400 block font-bold">MAC</span>
-                                <code class="text-sm font-bold text-indigo-700 mono inline-block" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">${escapeHtml(c.mac)}</code>
+                    <!-- المجموعة الأولى: بيانات العميل (التطبيق: MAC + Key) -->
+                    <div class="bg-slate-50/90 p-3 rounded-xl border border-slate-200/70 space-y-2">
+                        <span class="text-[11px] font-extrabold text-indigo-700 block">📱 بيانات العميل (التطبيق)</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div class="bg-white p-2.5 rounded-xl border border-slate-200/60 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden">
+                                    <span class="text-[10px] text-slate-400 block font-bold">MAC</span>
+                                    <code class="text-sm font-bold text-indigo-700 mono inline-block" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">${escapeHtml(c.mac)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك')"
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 transition">
+                                    نسخ الماك
+                                </button>
                             </div>
-                            <button type="button" onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك')"
-                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 transition">
-                                نسخ الماك
-                            </button>
-                        </div>
 
-                        <!-- صف الرقم السري -->
-                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 flex items-center justify-between gap-2">
-                            <div class="overflow-hidden">
-                                <span class="text-[11px] text-slate-400 block font-bold">KEY</span>
-                                <code class="text-sm font-bold text-slate-800 mono">${escapeHtml(c.key)}</code>
+                            <div class="bg-white p-2.5 rounded-xl border border-slate-200/60 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden">
+                                    <span class="text-[10px] text-slate-400 block font-bold">الرقم السري للتطبيق (Key)</span>
+                                    <code class="text-sm font-bold text-slate-800 mono" dir="ltr">${escapeHtml(c.key)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(c.key)}', 'تم نسخ الرقم السري للتطبيق')"
+                                    class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 transition">
+                                    نسخ السري
+                                </button>
                             </div>
-                            <button type="button" onclick="copyText('${escapeHtml(c.key)}', 'تم نسخ الرقم السري')"
-                                class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 transition">
-                                نسخ الرقم السري
-                            </button>
                         </div>
+                    </div>
+
+                    <!-- المجموعة الثانية: بيانات الاشتراك (الهوست + رقم الاشتراك + الرقم السري للاشتراك) -->
+                    <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200/80 space-y-2">
+                        <span class="text-[11px] font-extrabold text-amber-900 block">🔑 بيانات الاشتراك</span>
+                        
+                        ${hostsHtml}
+
+                        ${hasSubDetails ? `
+                        <div class="grid grid-cols-1 ${c.subNum && c.subPass ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} gap-2 pt-0.5">
+                            ${c.subNum ? `
+                            <div class="bg-white p-2.5 rounded-xl border border-amber-200/70 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden">
+                                    <span class="text-[10px] text-slate-400 block font-bold">رقم الاشتراك (Username)</span>
+                                    <code class="text-sm font-bold text-teal-700 mono" dir="ltr">${escapeHtml(c.subNum)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(c.subNum)}', 'تم نسخ رقم الاشتراك')"
+                                    class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 transition">
+                                    نسخ الاشتراك
+                                </button>
+                            </div>
+                            ` : ''}
+
+                            ${c.subPass ? `
+                            <div class="bg-white p-2.5 rounded-xl border border-amber-200/70 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden">
+                                    <span class="text-[10px] text-slate-400 block font-bold">الرقم السري للاشتراك (Password)</span>
+                                    <code class="text-sm font-bold text-rose-700 mono" dir="ltr">${escapeHtml(c.subPass)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(c.subPass)}', 'تم نسخ الرقم السري للاشتراك')"
+                                    class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 transition">
+                                    نسخ سري الاشتراك
+                                </button>
+                            </div>
+                            ` : ''}
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             `}).join('');
@@ -704,6 +786,8 @@
                     name: c.name,
                     mac: c.mac,
                     key: c.key,
+                    subNum: c.subNum || '',
+                    subPass: c.subPass || '',
                     createdAt: Number(c.createdAt) || Date.now()
                 }))
             };
@@ -777,6 +861,8 @@
                         const macClean = String(item.mac).trim().toUpperCase();
                         const nameClean = String(item.name).trim();
                         const keyClean = String(item.key).trim();
+                        const subNumClean = item.subNum ? String(item.subNum).trim() : '';
+                        const subPassClean = item.subPass ? String(item.subPass).trim() : '';
 
                         const exists = clients.some(c =>
                             (c.app || 'ibo') === appType &&
@@ -790,6 +876,8 @@
                                 name: nameClean,
                                 mac: macClean,
                                 key: keyClean,
+                                subNum: subNumClean,
+                                subPass: subPassClean,
                                 createdAt: Number(item.createdAt) || Date.now()
                             };
                             clients.unshift(newClient);
@@ -801,6 +889,8 @@
                                     name: nameClean,
                                     mac: macClean,
                                     key: keyClean,
+                                    subNum: subNumClean,
+                                    subPass: subPassClean,
                                     createdAt: newClient.createdAt
                                 });
                             }
