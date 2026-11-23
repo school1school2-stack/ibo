@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مدير عملاء IBO البسيط</title>
+    <title>مدير عملاء IBO & Shamel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
     <style>
@@ -16,7 +16,7 @@
         }
     </style>
 </head>
-<body class="text-slate-800 min-h-screen pb-10">
+<body class="text-slate-800 min-h-screen pb-12">
 
     <!-- الهيدر -->
     <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-20">
@@ -42,6 +42,33 @@
 
     <main class="max-w-3xl mx-auto px-4 pt-5 space-y-5">
 
+        <!-- قسم هوست اليوم (يظهر ويُنسخ لكل عميل) -->
+        <section class="bg-gradient-to-l from-slate-900 to-indigo-950 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-indigo-800/60">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">🌐</span>
+                    <h2 class="text-sm sm:text-base font-extrabold text-amber-300">هوست اليوم (يظهر تلقائياً لكل عميل)</h2>
+                </div>
+                <span id="hostSavedBadge" class="text-[11px] text-indigo-200 bg-white/10 px-2.5 py-0.5 rounded-full font-semibold">
+                    محدّث تلقائياً
+                </span>
+            </div>
+            <form onsubmit="saveDailyHost(event)" class="flex flex-col sm:flex-row gap-2.5">
+                <input type="text" id="dailyHostInput" dir="ltr" placeholder="http://example.com:8080"
+                    class="flex-1 px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 focus:border-amber-400 focus:bg-white/15 text-white placeholder-slate-400 outline-none text-sm mono text-left">
+                <div class="flex items-center gap-2">
+                    <button type="submit"
+                        class="flex-1 sm:flex-none bg-amber-400 hover:bg-amber-300 active:scale-[0.99] text-slate-900 font-extrabold px-5 py-2.5 rounded-xl text-xs sm:text-sm shadow transition">
+                        حفظ الهوست
+                    </button>
+                    <button type="button" onclick="copyCurrentHost()"
+                        class="bg-white/15 hover:bg-white/25 text-white font-bold px-3.5 py-2.5 rounded-xl text-xs sm:text-sm transition">
+                        نسخ
+                    </button>
+                </div>
+            </form>
+        </section>
+
         <!-- نموذج إضافة / تعديل عميل -->
         <section class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80">
             <div class="flex items-center justify-between mb-3">
@@ -53,11 +80,11 @@
             <form id="clientForm" onsubmit="saveClient(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <input type="hidden" id="editIdInput" value="">
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">التطبيق</label>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">القسم / التطبيق</label>
                     <select id="appInput"
                         class="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold bg-slate-50">
-                        <option value="ibo">IBO Player</option>
-                        <option value="shamel">Shamel TV</option>
+                        <option value="ibo">قسم IBO Player</option>
+                        <option value="shamel">قسم Shamel TV</option>
                     </select>
                 </div>
                 <div>
@@ -85,33 +112,41 @@
             </form>
         </section>
 
-        <!-- مربع البحث وأزرار التصفية -->
-        <div class="space-y-2.5">
+        <!-- مربع البحث وأقسام العرض المنفصلة -->
+        <div class="space-y-3">
             <input type="text" id="searchInput" oninput="renderList()" placeholder="🔍 ابحث بالاسم أو الماك..."
                 class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 focus:border-indigo-500 outline-none text-sm shadow-sm">
             
-            <div class="flex items-center gap-2">
-                <button type="button" onclick="setFilter('all')" id="btn-all"
-                    class="px-4 py-1.5 rounded-xl text-xs font-extrabold bg-indigo-600 text-white shadow-sm transition">
-                    الكل (<span id="count-all">0</span>)
+            <!-- أزرار التبديل بين قسم IBO وقسم Shamel.tv لحالهم -->
+            <div class="grid grid-cols-2 gap-2.5 bg-slate-200/70 p-1.5 rounded-2xl">
+                <button type="button" onclick="setSection('ibo')" id="tab-ibo"
+                    class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-2">
+                    <span>قسم IBO Player</span>
+                    <span id="count-ibo" class="bg-slate-900/15 px-2 py-0.5 rounded-full text-xs">0</span>
                 </button>
-                <button type="button" onclick="setFilter('ibo')" id="btn-ibo"
-                    class="px-4 py-1.5 rounded-xl text-xs font-extrabold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition">
-                    IBO (<span id="count-ibo">0</span>)
-                </button>
-                <button type="button" onclick="setFilter('shamel')" id="btn-shamel"
-                    class="px-4 py-1.5 rounded-xl text-xs font-extrabold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition">
-                    Shamel (<span id="count-shamel">0</span>)
+                <button type="button" onclick="setSection('shamel')" id="tab-shamel"
+                    class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 hover:bg-white/60 transition flex items-center justify-center gap-2">
+                    <span>قسم Shamel.tv</span>
+                    <span id="count-shamel" class="bg-slate-300/80 text-slate-700 px-2 py-0.5 rounded-full text-xs">0</span>
                 </button>
             </div>
         </div>
 
-        <!-- قائمة العملاء -->
+        <!-- ترويسة القسم النشط -->
+        <div id="sectionHeader" class="flex items-center justify-between px-1">
+            <h3 id="activeSectionTitle" class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                عملاء قسم IBO Player فقط
+            </h3>
+            <span id="activeSectionSubtitle" class="text-xs font-bold text-slate-500">يظهر هنا عملاء IBO فقط</span>
+        </div>
+
+        <!-- قائمة عملاء القسم المختار -->
         <section id="clientsList" class="space-y-3"></section>
 
         <!-- رسالة عند الفراغ -->
         <div id="emptyMsg" class="hidden text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400 text-sm">
-            لا يوجد عملاء محفوظون حالياً
+            لا يوجد عملاء محفوظون في هذا القسم حالياً
         </div>
 
     </main>
@@ -124,10 +159,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // إعدادات المشروع من الصورة + دعم البيئة
-        // إعدادات المشروع الجديد ibo-tv-410db
+        // إعدادات المشروع ibo-tv-410db
         const defaultFirebaseConfig = {
             apiKey: "AIzaSyCIDNuiKnNw0YzKmoRZQ67pafsThEUxw1E",
             authDomain: "ibo-tv-410db.firebaseapp.com",
@@ -146,10 +180,16 @@
         const db = getFirestore(app);
 
         const STORAGE_KEY = 'ibo_simple_clients_v1';
+        const HOST_STORAGE_KEY = 'ibo_daily_host_v1';
+
         let clients = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        let currentFilter = 'all';
+        let dailyHost = localStorage.getItem(HOST_STORAGE_KEY) || '';
+        let currentSection = 'ibo'; // القسم الافتراضي هو IBO ويفصل Shamel.tv لحاله
         let currentUser = null;
         let cloudReady = false;
+
+        // تعبئة حقل الهوست عند تحميل الصفحة
+        document.getElementById('dailyHostInput').value = dailyHost;
 
         const APP_CONFIG = {
             ibo: {
@@ -157,19 +197,29 @@
                 url: 'https://iboplayer.com/device/login',
                 btnText: 'نسخ الماك وفتح IBO ↗',
                 badgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
-                btnClass: 'bg-amber-400 hover:bg-amber-300 text-slate-900'
+                btnClass: 'bg-amber-400 hover:bg-amber-300 text-slate-900',
+                sectionTitle: 'عملاء قسم IBO Player فقط',
+                sectionSub: 'معزول عن عملاء Shamel.tv',
+                dotColor: 'bg-amber-400'
             },
             shamel: {
                 label: 'Shamel TV',
                 url: 'http://shamel.tv/',
                 btnText: 'نسخ الماك وفتح Shamel ↗',
                 badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                btnClass: 'bg-emerald-400 hover:bg-emerald-300 text-slate-900'
+                btnClass: 'bg-emerald-400 hover:bg-emerald-300 text-slate-900',
+                sectionTitle: 'عملاء قسم Shamel.tv فقط',
+                sectionSub: 'معزول عن عملاء IBO Player',
+                dotColor: 'bg-emerald-500'
             }
         };
 
         function getClientsCol() {
             return collection(db, 'artifacts', appId, 'public', 'data', 'clients');
+        }
+
+        function getSettingsDoc() {
+            return doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'daily_host');
         }
 
         function saveLocalBackup() {
@@ -196,14 +246,27 @@
                     currentUser = cred.user;
                 }
 
-                // الاستماع المباشر للتحديثات السحابية
+                // 1. الاستماع لتحديثات هوست اليوم في السحابة
+                onSnapshot(getSettingsDoc(), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const cloudHost = docSnap.data().host || '';
+                        dailyHost = cloudHost;
+                        localStorage.setItem(HOST_STORAGE_KEY, dailyHost);
+                        const inputEl = document.getElementById('dailyHostInput');
+                        if (document.activeElement !== inputEl) {
+                            inputEl.value = dailyHost;
+                        }
+                        renderList();
+                    }
+                }, (err) => console.error("Host sync error:", err));
+
+                // 2. الاستماع لتحديثات العملاء في السحابة
                 onSnapshot(getClientsCol(), async (snapshot) => {
                     cloudReady = true;
                     updateStatusBadge('متصل بالسحابة ●', true);
 
                     const cloudList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                     
-                    // إذا كانت السحابة فارغة ويوجد بيانات محلية، ارفعها للسحابة
                     if (cloudList.length === 0 && clients.length > 0) {
                         for (const item of clients) {
                             await addDoc(getClientsCol(), {
@@ -232,16 +295,63 @@
             }
         }
 
-        window.setFilter = function(filter) {
-            currentFilter = filter;
-            ['all', 'ibo', 'shamel'].forEach(f => {
-                const btn = document.getElementById('btn-' + f);
-                if (f === filter) {
-                    btn.className = 'px-4 py-1.5 rounded-xl text-xs font-extrabold bg-indigo-600 text-white shadow-sm transition';
-                } else {
-                    btn.className = 'px-4 py-1.5 rounded-xl text-xs font-extrabold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition';
+        // حفظ هوست اليوم ومزامنته
+        window.saveDailyHost = async function(e) {
+            e.preventDefault();
+            const val = document.getElementById('dailyHostInput').value.trim();
+            dailyHost = val;
+            localStorage.setItem(HOST_STORAGE_KEY, dailyHost);
+            renderList();
+            showToast(val ? 'تم حفظ هوست اليوم وتحديثه لكل العملاء' : 'تم مسح هوست اليوم');
+
+            if (cloudReady && currentUser) {
+                try {
+                    await setDoc(getSettingsDoc(), {
+                        host: dailyHost,
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                } catch (err) {
+                    console.error("Error saving daily host to cloud:", err);
                 }
-            });
+            }
+        };
+
+        window.copyCurrentHost = function() {
+            const val = document.getElementById('dailyHostInput').value.trim();
+            if (!val) {
+                showToast('لا يوجد هوست محفوظ حالياً');
+                return;
+            }
+            copyText(val, 'تم نسخ هوست اليوم');
+        };
+
+        // التبديل بين قسم IBO وقسم Shamel.tv لحالهم
+        window.setSection = function(section) {
+            currentSection = section;
+
+            // تحديث القائمة المنسدلة في نموذج الإضافة لتطابق القسم المفتوح تلقائياً
+            if (!document.getElementById('editIdInput').value) {
+                document.getElementById('appInput').value = section;
+            }
+
+            const tabIbo = document.getElementById('tab-ibo');
+            const tabShamel = document.getElementById('tab-shamel');
+
+            if (section === 'ibo') {
+                tabIbo.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-2';
+                tabShamel.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 hover:bg-white/60 transition flex items-center justify-center gap-2';
+            } else {
+                tabShamel.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-2';
+                tabIbo.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 hover:bg-white/60 transition flex items-center justify-center gap-2';
+            }
+
+            const info = APP_CONFIG[section];
+            document.getElementById('activeSectionTitle').innerHTML = `
+                <span class="w-2.5 h-2.5 rounded-full ${info.dotColor}"></span>
+                ${info.sectionTitle}
+            `;
+            document.getElementById('activeSectionSubtitle').textContent = info.sectionSub;
+
             renderList();
         };
 
@@ -274,6 +384,7 @@
             document.getElementById('nameInput').value = '';
             document.getElementById('macInput').value = '';
             document.getElementById('keyInput').value = '';
+            document.getElementById('appInput').value = currentSection;
 
             document.getElementById('formTitle').textContent = 'إضافة عميل جديد';
             document.getElementById('cancelEditBtn').classList.add('hidden');
@@ -292,12 +403,11 @@
             if (!name || !mac || !key) return;
 
             if (editId) {
-                // تحديث عميل موجود
                 const idx = clients.findIndex(c => String(c.id) === String(editId));
                 if (idx !== -1) {
                     clients[idx] = { ...clients[idx], app: appType, name, mac, key };
                     saveLocalBackup();
-                    renderList();
+                    setSection(appType);
                 }
                 cancelEdit();
                 showToast('تم حفظ التعديلات');
@@ -312,7 +422,6 @@
                     }
                 }
             } else {
-                // إضافة عميل جديد فوراً في الواجهة
                 const tempId = 'local_' + Date.now();
                 const newItem = {
                     id: tempId,
@@ -325,7 +434,7 @@
 
                 clients.unshift(newItem);
                 saveLocalBackup();
-                renderList();
+                setSection(appType); // الانتقال تلقائياً لقسم العميل المضاف
                 cancelEdit();
                 showToast('تم حفظ العميل بنجاح');
 
@@ -387,17 +496,18 @@
             const container = document.getElementById('clientsList');
             const emptyMsg = document.getElementById('emptyMsg');
 
-            // تحديث العدادات
-            document.getElementById('count-all').textContent = clients.length;
-            document.getElementById('count-ibo').textContent = clients.filter(c => (c.app || 'ibo') === 'ibo').length;
-            document.getElementById('count-shamel').textContent = clients.filter(c => c.app === 'shamel').length;
+            // تحديث عدادات كل قسم بشكل مستقل
+            const iboClients = clients.filter(c => (c.app || 'ibo') === 'ibo');
+            const shamelClients = clients.filter(c => c.app === 'shamel');
 
-            const filtered = clients.filter(c => {
-                const clientApp = c.app || 'ibo';
-                const matchesApp = currentFilter === 'all' || clientApp === currentFilter;
-                const matchesSearch = c.name.toLowerCase().includes(q) || c.mac.toLowerCase().includes(q);
-                return matchesApp && matchesSearch;
-            });
+            document.getElementById('count-ibo').textContent = iboClients.length;
+            document.getElementById('count-shamel').textContent = shamelClients.length;
+
+            // تصفية العملاء بحيث يظهر عملاء القسم المختار فقط (IBO لحاله و Shamel.tv لحاله)
+            const sectionClients = currentSection === 'ibo' ? iboClients : shamelClients;
+            const filtered = sectionClients.filter(c => 
+                c.name.toLowerCase().includes(q) || c.mac.toLowerCase().includes(q)
+            );
 
             if (filtered.length === 0) {
                 container.innerHTML = '';
@@ -408,6 +518,27 @@
             emptyMsg.classList.add('hidden');
             container.innerHTML = filtered.map(c => {
                 const appInfo = APP_CONFIG[c.app || 'ibo'];
+                
+                // بطاقة هوست اليوم داخل بطاقة كل عميل
+                const hostRowHtml = dailyHost
+                    ? `
+                    <div class="bg-amber-50/90 p-2.5 rounded-xl border border-amber-200/80 flex items-center justify-between gap-2">
+                        <div class="overflow-hidden">
+                            <span class="text-[11px] text-amber-800 block font-extrabold">هوست اليوم (HOST)</span>
+                            <code class="text-xs sm:text-sm font-bold text-slate-900 mono block truncate" dir="ltr">${escapeHtml(dailyHost)}</code>
+                        </div>
+                        <button type="button" onclick="copyText('${escapeHtml(dailyHost)}', 'تم نسخ هوست اليوم')"
+                            class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 transition shadow-sm">
+                            نسخ الهوست
+                        </button>
+                    </div>
+                    `
+                    : `
+                    <div class="bg-slate-50 px-3 py-2 rounded-xl border border-dashed border-slate-200 flex items-center justify-between text-xs text-slate-400">
+                        <span>لم يتم تحديد هوست اليوم بعد (أضفه من المربع بالأعلى)</span>
+                    </div>
+                    `;
+
                 return `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col gap-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
@@ -433,6 +564,9 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- هوست اليوم الخاص بالعميل -->
+                    ${hostRowHtml}
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <!-- صف الماك -->
