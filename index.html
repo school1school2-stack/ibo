@@ -1005,6 +1005,20 @@
                             }
                         }
                     }
+
+                    saveLocalBackup();
+                    renderList();
+                    showToast(`تم استيراد ${addedCount} عميل جديد بنجاح`);
+                } catch (err) {
+                    console.error('Import backup error:', err);
+                    showToast('تعذر قراءة ملف النسخة الاحتياطية');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        };
+
         // توليد ونسخ رابط مشاركة بيانات العميل باسمه عبر https://school1school2-stack.github.io/ibo/
         const SHARE_BASE_URL = 'https://school1school2-stack.github.io/ibo/';
 
