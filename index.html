@@ -344,18 +344,20 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // إعدادات مشروع السحابة الجديدة: Vulture-App (vulture-app-1efba)
         const defaultFirebaseConfig = {
-            apiKey: "AIzaSyCIDNuiKnNw0YzKmoRZQ67pafsThEUxw1E",
-            authDomain: "ibo-tv-410db.firebaseapp.com",
-            projectId: "ibo-tv-410db",
-            storageBucket: "ibo-tv-410db.firebasestorage.app",
-            messagingSenderId: "499774105347",
-            appId: "1:499774105347:web:4943e55e589c8b4054eb36",
-            measurementId: "G-HZL0F1H1RL"
+            apiKey: "AIzaSyBwFpJ75HQ-NyLDH9GGS6bhyvIE8PRzl-ug",
+            authDomain: "vulture-app-1efba.firebaseapp.com",
+            databaseURL: "https://vulture-app-1efba-default-rtdb.firebaseio.com",
+            projectId: "vulture-app-1efba",
+            storageBucket: "vulture-app-1efba.firebasestorage.app",
+            messagingSenderId: "27107131702",
+            appId: "1:27107131702:web:2c782fbe400ebe7c87b397",
+            measurementId: "G-41J4JJZEZG"
         };
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ibo-tv-410db';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vulture-app-1efba';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -393,7 +395,6 @@
         }
 
         let currentSection = 'ibo';
-        let currentUser = null;
         let cloudReady = false;
 
         const APP_CONFIG = {
@@ -455,8 +456,20 @@
                 : 'text-[11px] bg-rose-500/30 text-amber-100 border border-rose-300/40 px-2.5 py-0.5 rounded-full font-bold';
         }
 
+        // محاولة تسجيل الدخول إن كان مفعلاً دون تعطيل الاتصال إذا كان غير مفعّل
+        async function tryOptionalAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.warn('Optional auth skipped:', e.code);
+            }
+        }
+
         async function syncHostsToCloud() {
-            if (!currentUser) return;
             try {
                 await setDoc(getSettingsDoc(), {
                     dailyHosts: dailyHosts,
@@ -548,17 +561,15 @@
             renderList();
             showToast(personalPin ? 'تم حفظ الرقم السري الخاص بك' : 'تم مسح الرقم السري');
 
-            if (currentUser) {
-                try {
-                    await setDoc(getSettingsDoc(), {
-                        personalPin: personalPin,
-                        updatedAt: Date.now()
-                    }, { merge: true });
-                    showErrorBanner('');
-                } catch (err) {
-                    console.error("PIN sync error:", err);
-                    showErrorBanner('فشل حفظ الرقم السري في السحابة (' + (err.code || err.message) + ')');
-                }
+            try {
+                await setDoc(getSettingsDoc(), {
+                    personalPin: personalPin,
+                    updatedAt: Date.now()
+                }, { merge: true });
+                showErrorBanner('');
+            } catch (err) {
+                console.error("PIN sync error:", err);
+                showErrorBanner('فشل حفظ الرقم السري في السحابة (' + (err.code || err.message) + ')');
             }
         };
 
@@ -590,16 +601,12 @@
 
         // مزامنة يدوية فورية لرفع المحلي وجلب السحابي
         window.forceSyncNow = async function() {
-            showToast('جاري المزامنة مع السحابة...');
+            showToast('جاري المزامنة مع سحابة Vulture...');
             try {
-                if (!currentUser) {
-                    const cred = await signInAnonymously(auth);
-                    currentUser = cred.user;
-                }
+                await tryOptionalAuth();
                 const snap = await getDocs(getClientsCol());
                 const cloudDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                // رفع أي عميل محلي غير موجود في السحابة
                 let uploaded = 0;
                 for (const localItem of clients) {
                     const existsInCloud = cloudDocs.some(c =>
@@ -626,14 +633,14 @@
                 }
 
                 cloudReady = true;
-                updateStatusBadge('متصل بالسحابة ●', true);
+                updateStatusBadge('متصل بسحابة Vulture ●', true);
                 showErrorBanner('');
                 showToast(`اكتملت المزامنة (تم رفع ${uploaded} عميل)`);
             } catch (err) {
                 console.error('Manual sync failed:', err);
                 const code = err.code || err.message || 'خطأ غير معروف';
                 updateStatusBadge('فشل الربط: ' + code, false);
-                showErrorBanner('سبب الفشل: ' + code + ' — تأكد من تفعيل Anonymous Auth ونشر Rules في Firestore');
+                showErrorBanner('سبب الفشل: ' + code);
                 showToast('فشلت المزامنة: ' + code);
             }
         };
@@ -642,89 +649,75 @@
             renderPersonalPinUI();
             renderHostsManager();
             renderList();
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
-                    currentUser = cred.user;
-                } else {
-                    const cred = await signInAnonymously(auth);
-                    currentUser = cred.user;
+
+            await tryOptionalAuth();
+
+            onSnapshot(getSettingsDoc(), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (typeof data.personalPin === 'string') {
+                        personalPin = data.personalPin;
+                        saveLocalPersonalPin();
+                        renderPersonalPinUI();
+                    }
+                    if (Array.isArray(data.dailyHosts)) {
+                        dailyHosts = data.dailyHosts;
+                        saveLocalHosts();
+                        renderHostsManager();
+                        renderList();
+                    } else if (data.dailyHost) {
+                        dailyHosts = [{ id: 'h_cloud', label: 'هوست 1', url: data.dailyHost }];
+                        saveLocalHosts();
+                        renderHostsManager();
+                        renderList();
+                    }
+                } else if (dailyHosts.length > 0 || personalPin) {
+                    syncHostsToCloud();
+                    if (personalPin) {
+                        setDoc(getSettingsDoc(), { personalPin }, { merge: true });
+                    }
+                }
+            }, (err) => {
+                console.error("Settings snapshot error:", err);
+            });
+
+            onSnapshot(getClientsCol(), async (snapshot) => {
+                cloudReady = true;
+                updateStatusBadge('متصل بسحابة Vulture ●', true);
+                showErrorBanner('');
+
+                const cloudList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                if (cloudList.length === 0 && clients.length > 0) {
+                    for (const item of clients) {
+                        await addDoc(getClientsCol(), {
+                            app: item.app || 'ibo',
+                            name: item.name,
+                            mac: item.mac,
+                            key: item.key,
+                            subNum: item.subNum || '',
+                            subPass: item.subPass || '',
+                            createdAt: Number(item.createdAt) || Date.now()
+                        });
+                    }
+                    return;
                 }
 
-                onSnapshot(getSettingsDoc(), (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        if (typeof data.personalPin === 'string') {
-                            personalPin = data.personalPin;
-                            saveLocalPersonalPin();
-                            renderPersonalPinUI();
-                        }
-                        if (Array.isArray(data.dailyHosts)) {
-                            dailyHosts = data.dailyHosts;
-                            saveLocalHosts();
-                            renderHostsManager();
-                            renderList();
-                        } else if (data.dailyHost) {
-                            dailyHosts = [{ id: 'h_cloud', label: 'هوست 1', url: data.dailyHost }];
-                            saveLocalHosts();
-                            renderHostsManager();
-                            renderList();
-                        }
-                    } else if (dailyHosts.length > 0 || personalPin) {
-                        syncHostsToCloud();
-                        if (personalPin) {
-                            setDoc(getSettingsDoc(), { personalPin }, { merge: true });
-                        }
-                    }
-                }, (err) => {
-                    console.error("Settings snapshot error:", err);
-                });
+                const localUnsynced = clients.filter(loc =>
+                    String(loc.id).startsWith('local_') &&
+                    !cloudList.some(cld => (cld.mac || '').toUpperCase() === (loc.mac || '').toUpperCase())
+                );
 
-                onSnapshot(getClientsCol(), async (snapshot) => {
-                    cloudReady = true;
-                    updateStatusBadge('متصل بالسحابة ●', true);
-                    showErrorBanner('');
-
-                    const cloudList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-
-                    if (cloudList.length === 0 && clients.length > 0) {
-                        for (const item of clients) {
-                            await addDoc(getClientsCol(), {
-                                app: item.app || 'ibo',
-                                name: item.name,
-                                mac: item.mac,
-                                key: item.key,
-                                subNum: item.subNum || '',
-                                subPass: item.subPass || '',
-                                createdAt: Number(item.createdAt) || Date.now()
-                            });
-                        }
-                        return;
-                    }
-
-                    // دمج أي عنصر محلي لم يُرفع بعد
-                    const localUnsynced = clients.filter(loc =>
-                        String(loc.id).startsWith('local_') &&
-                        !cloudList.some(cld => (cld.mac || '').toUpperCase() === (loc.mac || '').toUpperCase())
-                    );
-
-                    clients = [...localUnsynced, ...cloudList].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                    saveLocalBackup();
-                    renderList();
-                }, (error) => {
-                    console.error("Cloud sync error:", error);
-                    cloudReady = false;
-                    const code = error.code || error.message;
-                    updateStatusBadge('خطأ Firestore: ' + code, false);
-                    showErrorBanner('خطأ في قاعدة البيانات (' + code + ') — افتح Firestore -> Rules واضغط Publish');
-                });
-            } catch (err) {
-                console.error("Auth error:", err);
+                clients = [...localUnsynced, ...cloudList].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                saveLocalBackup();
+                renderList();
+            }, (error) => {
+                console.error("Cloud sync error:", error);
                 cloudReady = false;
-                const code = err.code || err.message;
-                updateStatusBadge('خطأ الدخول: ' + code, false);
-                showErrorBanner('خطأ في المصادقة (' + code + ') — فعّل Anonymous من Authentication -> Sign-in method');
-            }
+                const code = error.code || error.message;
+                updateStatusBadge('خطأ Firestore: ' + code, false);
+                showErrorBanner('خطأ في قاعدة البيانات (' + code + ')');
+            });
         }
 
         window.setSection = function(section) {
@@ -823,12 +816,12 @@
                 setSection(appType);
                 cancelEdit();
 
-                if (currentUser && !String(editId).startsWith('local_')) {
+                if (!String(editId).startsWith('local_')) {
                     try {
                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', String(editId)), {
                             app: appType, name, mac, key, subNum, subPass
                         });
-                        showToast('✓ تم التعديل في السحابة والجهاز');
+                        showToast('✓ تم التعديل في سحابة Vulture والجهاز');
                     } catch (err) {
                         console.error("Cloud update error:", err);
                         showErrorBanner('فشل التحديث السحابي: ' + (err.code || err.message));
@@ -857,10 +850,6 @@
                 cancelEdit();
 
                 try {
-                    if (!currentUser) {
-                        const cred = await signInAnonymously(auth);
-                        currentUser = cred.user;
-                    }
                     const docRef = await addDoc(getClientsCol(), {
                         app: appType,
                         name,
@@ -870,16 +859,15 @@
                         subPass,
                         createdAt
                     });
-                    // تحديث المعرف المحلي بمعرف السحابة
                     const localIdx = clients.findIndex(c => c.id === tempId);
                     if (localIdx !== -1) {
                         clients[localIdx].id = docRef.id;
                         saveLocalBackup();
                     }
                     cloudReady = true;
-                    updateStatusBadge('متصل بالسحابة ●', true);
+                    updateStatusBadge('متصل بسحابة Vulture ●', true);
                     showErrorBanner('');
-                    showToast('✓ تم الحفظ في السحابة والجهاز بنجاح');
+                    showToast('✓ تم الحفظ في سحابة Vulture والجهاز بنجاح');
                 } catch (err) {
                     console.error("Cloud add error:", err);
                     const code = err.code || err.message;
@@ -895,7 +883,7 @@
             renderList();
             showToast('تم حذف العميل');
 
-            if (currentUser && !String(id).startsWith('local_')) {
+            if (!String(id).startsWith('local_')) {
                 try {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', String(id)));
                 } catch (err) {
@@ -1126,9 +1114,7 @@
                         personalPin = parsed.personalPin.trim();
                         saveLocalPersonalPin();
                         renderPersonalPinUI();
-                        if (currentUser) {
-                            await setDoc(getSettingsDoc(), { personalPin, updatedAt: Date.now() }, { merge: true });
-                        }
+                        await setDoc(getSettingsDoc(), { personalPin, updatedAt: Date.now() }, { merge: true });
                     }
 
                     if (Array.isArray(parsed.dailyHosts) && parsed.dailyHosts.length > 0) {
@@ -1177,19 +1163,17 @@
                             clients.unshift(newClient);
                             addedCount++;
 
-                            if (currentUser) {
-                                try {
-                                    await addDoc(getClientsCol(), {
-                                        app: appType,
-                                        name: nameClean,
-                                        mac: macClean,
-                                        key: keyClean,
-                                        subNum: subNumClean,
-                                        subPass: subPassClean,
-                                        createdAt: newClient.createdAt
-                                    });
-                                } catch (err) {}
-                            }
+                            try {
+                                await addDoc(getClientsCol(), {
+                                    app: appType,
+                                    name: nameClean,
+                                    mac: macClean,
+                                    key: keyClean,
+                                    subNum: subNumClean,
+                                    subPass: subPassClean,
+                                    createdAt: newClient.createdAt
+                                });
+                            } catch (err) {}
                         }
                     }
 
