@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدير عملاء IBO & Shamel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen pb-12">
+
+    <!-- الهيدر -->
+    <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-20">
+        <div class="max-w-3xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+                <h1 class="text-lg sm:text-xl font-extrabold">مدير عملاء IPTV</h1>
+                <span id="cloudStatus" class="text-[11px] bg-indigo-800/80 text-indigo-100 px-2.5 py-0.5 rounded-full font-bold">
+                    جاري الربط...
+                </span>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="https://iboplayer.com/device/login" target="_blank" rel="noopener noreferrer"
+                    class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-3 py-1.5 rounded-xl text-xs shadow transition">
+                    موقع IBO ↗
+                </a>
+                <a href="http://shamel.tv/" target="_blank" rel="noopener noreferrer"
+                    class="bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-extrabold px-3 py-1.5 rounded-xl text-xs shadow transition">
+                    موقع Shamel ↗
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 pt-5 space-y-5">
+
+        <!-- قسم هوستات اليوم (يدعم إضافة أكثر من هوست ويظهر تلقائياً لكل عميل) -->
+        <section class="bg-amber-50 p-4 rounded-2xl shadow-sm border border-amber-200/90 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">🌐</span>
+                    <div>
+                        <h2 class="text-xs sm:text-sm font-extrabold text-amber-950">هوستات اليوم (Daily Hosts)</h2>
+                        <p class="text-[11px] text-amber-800/80">تظهر جميع الهوستات المضافة هنا تلقائياً داخل بطاقة كل عميل</p>
+                    </div>
+                </div>
+                <span id="hostsCountBadge" class="text-[11px] font-extrabold bg-amber-200/80 text-amber-900 px-2.5 py-0.5 rounded-full">
+                    0 هوست
+                </span>
+            </div>
+
+            <form onsubmit="addDailyHost(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <input type="text" id="hostLabelInput" placeholder="اسم الهوست (اختياري)"
+                    class="sm:col-span-4 px-3 py-2 rounded-xl border border-amber-300/80 focus:border-amber-500 outline-none text-xs sm:text-sm bg-white">
+                <input type="text" id="hostUrlInput" required dir="ltr" placeholder="http://example.com:8080"
+                    class="sm:col-span-6 px-3 py-2 rounded-xl border border-amber-300/80 focus:border-amber-500 outline-none text-xs sm:text-sm mono text-left bg-white">
+                <button type="submit"
+                    class="sm:col-span-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-3 py-2 rounded-xl text-xs shadow-sm transition">
+                    + إضافة
+                </button>
+            </form>
+
+            <div id="hostsListContainer" class="space-y-1.5"></div>
+        </section>
+
+        <!-- قسم النسخ الاحتياطي (تصدير واستيراد كامل) + الرقم السري الخاص بقفل البيانات -->
+        <section class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">💾</span>
+                    <div>
+                        <h2 class="text-xs sm:text-sm font-extrabold text-slate-700">النسخ الاحتياطي الكامل</h2>
+                        <p class="text-[11px] text-slate-400">حفظ أو استعادة جميع العملاء (IBO و Shamel) مع الهوستات والرقم السري</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button type="button" onclick="exportBackup()"
+                        class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <span>⬇ تصدير نسخة</span>
+                    </button>
+                    <label class="flex-1 sm:flex-none bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5">
+                        <span>⬆ استيراد نسخة</span>
+                        <input type="file" id="importFileInput" accept=".json" onchange="importBackup(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+
+            <!-- شريط الرقم السري الخاص بقفل البيانات (IBO & Shamel TV) -->
+            <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">🔒</span>
+                    <div>
+                        <span class="text-xs font-extrabold text-slate-700 block">الرقم السري الخاص بي (قفل البيانات)</span>
+                        <span class="text-[11px] text-slate-400">يُحفظ في النسخة الاحتياطية ويظهر لنسخه بسهولة في IBO و Shamel</span>
+                    </div>
+                </div>
+                <form onsubmit="savePersonalPin(event)" class="flex items-center gap-1.5 w-full sm:w-auto">
+                    <input type="text" id="personalPinInput" dir="ltr" placeholder="0000"
+                        class="flex-1 sm:w-32 px-3 py-1.5 rounded-xl border border-slate-200 focus:border-purple-500 outline-none text-sm mono font-bold text-center bg-slate-50">
+                    <button type="submit"
+                        class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition shrink-0">
+                        حفظ
+                    </button>
+                    <button type="button" id="copyPersonalPinBtn" onclick="copyPersonalPin()"
+                        class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition shrink-0 flex items-center gap-1">
+                        <span>📋 نسخ الرقم السري</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- نموذج إضافة / تعديل عميل -->
+        <section class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80">
+            <div class="flex items-center justify-between mb-3">
+                <h2 id="formTitle" class="text-sm font-extrabold text-slate-700">إضافة عميل جديد</h2>
+                <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden text-xs font-bold text-rose-600 hover:underline">
+                    إلغاء التعديل ✕
+                </button>
+            </div>
+            <form id="clientForm" onsubmit="saveClient(event)" class="space-y-4">
+                <input type="hidden" id="editIdInput" value="">
+                
+                <!-- القسم الأول: بيانات العميل والتطبيق -->
+                <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100 space-y-3">
+                    <div class="text-xs font-extrabold text-indigo-800 flex items-center gap-1.5">
+                        <span>📱 بيانات العميل (التطبيق)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">القسم / التطبيق</label>
+                            <select id="appInput"
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold bg-white">
+                                <option value="ibo">قسم IBO Player</option>
+                                <option value="shamel">قسم Shamel TV</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">اسم العميل</label>
+                            <input type="text" id="nameInput" required placeholder="مثال: أبو خالد"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">الماك أدريس (MAC)</label>
+                            <input type="text" id="macInput" required maxlength="17" dir="ltr" placeholder="00:1A:79:XX:XX:XX"
+                                oninput="formatMac(this)"
+                                style="direction: ltr; unicode-bidi: isolate;"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm mono uppercase text-left bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">الرقم السري للتطبيق (Key)</label>
+                            <input type="text" id="keyInput" required dir="ltr" placeholder="123456"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm mono text-left bg-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- القسم الثاني: بيانات الاشتراك (رقم الاشتراك + الرقم السري للاشتراك) -->
+                <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-200/70 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-1">
+                        <span class="text-xs font-extrabold text-amber-900">🔑 بيانات الاشتراك (مع هوستات اليوم)</span>
+                        <span class="text-[11px] text-amber-700 font-semibold">الهوست يُضاف تلقائياً من الأعلى</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">رقم الاشتراك (Username)</label>
+                            <input type="text" id="subNumInput" dir="ltr" placeholder="987654321"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-amber-500 outline-none text-sm mono text-left bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">الرقم السري للاشتراك (Password)</label>
+                            <input type="text" id="subPassInput" dir="ltr" placeholder="pass12345"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-amber-500 outline-none text-sm mono text-left bg-white">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" id="submitBtn"
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-sm shadow-sm transition">
+                        + حفظ العميل
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- مربع البحث وأقسام العرض المنفصلة -->
+        <div class="space-y-3">
+            <input type="text" id="searchInput" oninput="renderList()" placeholder="🔍 ابحث بالاسم أو الماك..."
+                class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 focus:border-indigo-500 outline-none text-sm shadow-sm">
+            
+            <!-- أزرار التبديل بين قسم IBO وقسم Shamel.tv لحالهم -->
+            <div class="grid grid-cols-2 gap-2.5 bg-slate-200/70 p-1.5 rounded-2xl">
+                <button type="button" onclick="setSection('ibo')" id="tab-ibo"
+                    class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-2">
+                    <span>قسم IBO Player</span>
+                    <span id="count-ibo" class="bg-slate-900/15 px-2 py-0.5 rounded-full text-xs">0</span>
+                </button>
+                <button type="button" onclick="setSection('shamel')" id="tab-shamel"
+                    class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 hover:bg-white/60 transition flex items-center justify-center gap-2">
+                    <span>قسم Shamel.tv</span>
+                    <span id="count-shamel" class="bg-slate-300/80 text-slate-700 px-2 py-0.5 rounded-full text-xs">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ترويسة القسم النشط -->
+        <div id="sectionHeader" class="flex items-center justify-between px-1">
+            <h3 id="activeSectionTitle" class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                عملاء قسم IBO Player فقط
+            </h3>
+            <span id="activeSectionSubtitle" class="text-xs font-bold text-slate-500">يظهر هنا عملاء IBO فقط</span>
+        </div>
+
+        <!-- قائمة عملاء القسم المختار -->
+        <section id="clientsList" class="space-y-3"></section>
+
+        <!-- رسالة عند الفراغ -->
+        <div id="emptyMsg" class="hidden text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400 text-sm">
+            لا يوجد عملاء محفوظون في هذا القسم حالياً
+        </div>
+
+    </main>
+
+    <!-- إشعار النسخ -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-lg opacity-0 pointer-events-none transition-opacity duration-200 z-50">
+        تم النسخ!
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // إعدادات المشروع ibo-tv-410db
+        const defaultFirebaseConfig = {
+            apiKey: "AIzaSyCIDNuiKnNw0YzKmoRZQ67pafsThEUxw1E",
+            authDomain: "ibo-tv-410db.firebaseapp.com",
+            projectId: "ibo-tv-410db",
+            storageBucket: "ibo-tv-410db.firebasestorage.app",
+            messagingSenderId: "499774105347",
+            appId: "1:499774105347:web:4943e55e589c8b4054eb36",
+            measurementId: "G-HZL0F1H1RL"
+        };
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ibo-tv-410db';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const STORAGE_KEY = 'ibo_simple_clients_v1';
+        const HOST_STORAGE_KEY = 'ibo_daily_host_v1';
+        const HOSTS_LIST_KEY = 'ibo_daily_hosts_list_v1';
+        const PERSONAL_PIN_KEY = 'ibo_personal_lock_pin_v1';
+
+        let clients = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        let personalPin = localStorage.getItem(PERSONAL_PIN_KEY) || '';
+        if (!clients.some(c => c.mac && c.mac.toUpperCase() === '00:C3:F4:90:91:5B')) {
+            clients.unshift({
+                id: 'local_preset_00C3',
+                app: 'ibo',
+                name: 'عميل (00:C3)',
+                mac: '00:C3:F4:90:91:5B',
+                key: '123456',
+                createdAt: Date.now()
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+        }
+
+        let dailyHosts = JSON.parse(localStorage.getItem(HOSTS_LIST_KEY) || 'null');
+        if (!Array.isArray(dailyHosts)) {
+            const legacyHost = localStorage.getItem(HOST_STORAGE_KEY);
+            dailyHosts = legacyHost ? [{ id: 'h_' + Date.now(), label: 'هوست 1', url: legacyHost }] : [];
+        }
+
+        let currentSection = 'ibo';
+        let currentUser = null;
+        let cloudReady = false;
+
+        const APP_CONFIG = {
+            ibo: {
+                label: 'IBO Player',
+                url: 'https://iboplayer.com/device/login',
+                btnText: 'نسخ الماك وفتح IBO ↗',
+                badgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
+                btnClass: 'bg-amber-400 hover:bg-amber-300 text-slate-900'
+            },
+            shamel: {
+                label: 'Shamel TV',
+                url: 'http://shamel.tv/',
+                btnText: 'نسخ الماك وفتح Shamel ↗',
+                badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                btnClass: 'bg-emerald-400 hover:bg-emerald-300 text-slate-900'
+            }
+        };
+
+        function getClientsCol() {
+            return collection(db, 'artifacts', appId, 'public', 'data', 'clients');
+        }
+
+        function getSettingsDoc() {
+            return doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general');
+        }
+
+        function saveLocalBackup() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+        }
+
+        function saveLocalHosts() {
+            localStorage.setItem(HOSTS_LIST_KEY, JSON.stringify(dailyHosts));
+            localStorage.setItem(HOST_STORAGE_KEY, dailyHosts[0]?.url || '');
+        }
+
+        function saveLocalPersonalPin() {
+            localStorage.setItem(PERSONAL_PIN_KEY, personalPin);
+        }
+
+        function updateStatusBadge(text, isSuccess) {
+            const el = document.getElementById('cloudStatus');
+            if (!el) return;
+            el.textContent = text;
+            el.className = isSuccess
+                ? 'text-[11px] bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 px-2.5 py-0.5 rounded-full font-bold'
+                : 'text-[11px] bg-amber-500/20 text-amber-200 border border-amber-400/30 px-2.5 py-0.5 rounded-full font-bold';
+        }
+
+        async function syncHostsToCloud() {
+            if (cloudReady && currentUser) {
+                try {
+                    await setDoc(getSettingsDoc(), {
+                        dailyHosts: dailyHosts,
+                        dailyHost: dailyHosts[0]?.url || '',
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                } catch (err) {
+                    console.error("Hosts sync error:", err);
+                }
+            }
+        }
+
+        function renderHostsManager() {
+            const container = document.getElementById('hostsListContainer');
+            const badge = document.getElementById('hostsCountBadge');
+            if (badge) {
+                badge.textContent = `${dailyHosts.length} هوست`;
+            }
+            if (!container) return;
+
+            if (dailyHosts.length === 0) {
+                container.innerHTML = '<div class="text-center py-2 text-xs text-amber-800/70">لا توجد هوستات مضافة حالياً، أضف هوست اليوم بالأعلى ليظهر لكل عميل</div>';
+                return;
+            }
+
+            container.innerHTML = dailyHosts.map((h, idx) => `
+                <div class="bg-white/90 px-3 py-2 rounded-xl border border-amber-200/80 flex items-center justify-between gap-2">
+                    <div class="overflow-hidden flex items-center gap-2">
+                        <span class="text-[11px] font-extrabold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-lg shrink-0">
+                            ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}
+                        </span>
+                        <code class="text-xs font-bold text-slate-800 mono truncate" dir="ltr">${escapeHtml(h.url)}</code>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
+                            class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition">
+                            نسخ
+                        </button>
+                        <button type="button" onclick="deleteDailyHost('${h.id}')"
+                            class="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2 py-1 rounded-lg text-[11px] transition">
+                            حذف
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.addDailyHost = async function(e) {
+            e.preventDefault();
+            const labelInput = document.getElementById('hostLabelInput');
+            const urlInput = document.getElementById('hostUrlInput');
+            const urlVal = urlInput.value.trim();
+            if (!urlVal) return;
+
+            const labelVal = labelInput.value.trim() || `هوست ${dailyHosts.length + 1}`;
+            dailyHosts.push({
+                id: 'h_' + Date.now(),
+                label: labelVal,
+                url: urlVal
+            });
+
+            labelInput.value = '';
+            urlInput.value = '';
+            saveLocalHosts();
+            renderHostsManager();
+            renderList();
+            showToast('تمت إضافة الهوست بنجاح');
+            await syncHostsToCloud();
+        };
+
+        function renderPersonalPinUI() {
+            const input = document.getElementById('personalPinInput');
+            const copyBtn = document.getElementById('copyPersonalPinBtn');
+            if (input && document.activeElement !== input) {
+                input.value = personalPin;
+            }
+            if (copyBtn) {
+                copyBtn.innerHTML = personalPin
+                    ? `<span>📋 نسخ (${escapeHtml(personalPin)})</span>`
+                    : `<span>📋 نسخ الرقم السري</span>`;
+            }
+        }
+
+        window.savePersonalPin = async function(e) {
+            e.preventDefault();
+            const input = document.getElementById('personalPinInput');
+            personalPin = input.value.trim();
+            saveLocalPersonalPin();
+            renderPersonalPinUI();
+            renderList();
+            showToast(personalPin ? 'تم حفظ الرقم السري الخاص بك' : 'تم مسح الرقم السري');
+
+            if (cloudReady && currentUser) {
+                try {
+                    await setDoc(getSettingsDoc(), {
+                        personalPin: personalPin,
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                } catch (err) {
+                    console.error("PIN sync error:", err);
+                }
+            }
+        };
+
+        window.copyPersonalPin = function() {
+            const inputVal = document.getElementById('personalPinInput')?.value.trim();
+            const pinToCopy = inputVal || personalPin;
+            if (!pinToCopy) {
+                showToast('اكتب الرقم السري الخاص بك أولاً');
+                document.getElementById('personalPinInput')?.focus();
+                return;
+            }
+            if (inputVal && inputVal !== personalPin) {
+                personalPin = inputVal;
+                saveLocalPersonalPin();
+                renderPersonalPinUI();
+                renderList();
+            }
+            copyText(pinToCopy, 'تم نسخ الرقم السري الخاص بك');
+        };
+
+        window.deleteDailyHost = async function(id) {
+            dailyHosts = dailyHosts.filter(h => String(h.id) !== String(id));
+            saveLocalHosts();
+            renderHostsManager();
+            renderList();
+            showToast('تم حذف الهوست');
+            await syncHostsToCloud();
+        };
+
+        async function initCloudSync() {
+            renderPersonalPinUI();
+            renderHostsManager();
+            renderList();
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
+                    currentUser = cred.user;
+                } else {
+                    const cred = await signInAnonymously(auth);
+                    currentUser = cred.user;
+                }
+
+                // الاستماع لهوستات اليوم والرقم السري الخاص من السحابة
+                onSnapshot(getSettingsDoc(), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (typeof data.personalPin === 'string') {
+                            personalPin = data.personalPin;
+                            saveLocalPersonalPin();
+                            renderPersonalPinUI();
+                        }
+                        if (Array.isArray(data.dailyHosts)) {
+                            dailyHosts = data.dailyHosts;
+                            saveLocalHosts();
+                            renderHostsManager();
+                            renderList();
+                        } else if (data.dailyHost) {
+                            dailyHosts = [{ id: 'h_cloud', label: 'هوست 1', url: data.dailyHost }];
+                            saveLocalHosts();
+                            renderHostsManager();
+                            renderList();
+                        }
+                    } else if (dailyHosts.length > 0 || personalPin) {
+                        syncHostsToCloud();
+                        if (personalPin) {
+                            setDoc(getSettingsDoc(), { personalPin }, { merge: true });
+                        }
+                    }
+                });
+
+                // الاستماع المباشر لقائمة العملاء
+                onSnapshot(getClientsCol(), async (snapshot) => {
+                    cloudReady = true;
+                    updateStatusBadge('متصل بالسحابة ●', true);
+
+                    const cloudList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                    if (cloudList.length === 0 && clients.length > 0) {
+                        for (const item of clients) {
+                            await addDoc(getClientsCol(), {
+                                app: item.app || 'ibo',
+                                name: item.name,
+                                mac: item.mac,
+                                key: item.key,
+                                subNum: item.subNum || '',
+                                subPass: item.subPass || '',
+                                createdAt: Number(item.createdAt) || Date.now()
+                            });
+                        }
+                        return;
+                    }
+
+                    clients = cloudList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    saveLocalBackup();
+                    renderList();
+                }, (error) => {
+                    console.error("Cloud sync error:", error);
+                    cloudReady = false;
+                    updateStatusBadge('حفظ محلي (تحقق من قواعد Firestore)', false);
+                });
+            } catch (err) {
+                console.error("Auth error:", err);
+                cloudReady = false;
+                updateStatusBadge('حفظ محلي (فعّل Anonymous Auth)', false);
+            }
+        }
+
+        window.setSection = function(section) {
+            currentSection = section;
+            const tabIbo = document.getElementById('tab-ibo');
+            const tabShamel = document.getElementById('tab-shamel');
+            const titleEl = document.getElementById('activeSectionTitle');
+            const subEl = document.getElementById('activeSectionSubtitle');
+            const appSelect = document.getElementById('appInput');
+
+            if (section === 'ibo') {
+                tabIbo.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-2';
+                tabShamel.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 hover:bg-white/60 transition flex items-center justify-center gap-2';
+                titleEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> عملاء قسم IBO Player فقط';
+                subEl.textContent = 'يظهر هنا عملاء IBO فقط';
+            } else {
+                tabShamel.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 text-white shadow-sm transition flex items-center justify-center gap-2';
+                tabIbo.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 hover:bg-white/60 transition flex items-center justify-center gap-2';
+                titleEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> عملاء قسم Shamel.tv فقط';
+                subEl.textContent = 'يظهر هنا عملاء Shamel.tv فقط';
+            }
+
+            if (appSelect && !document.getElementById('editIdInput').value) {
+                appSelect.value = section;
+            }
+            renderList();
+        };
+
+        window.formatMac = function(el) {
+            const start = el.selectionStart;
+            const prevLen = el.value.length;
+            let v = el.value.replace(/[^a-fA-F0-9]/g, '').toUpperCase().substring(0, 12);
+            const formatted = v.match(/.{1,2}/g)?.join(':') || '';
+            el.value = formatted;
+            const diff = formatted.length - prevLen;
+            if (typeof start === 'number') {
+                const newPos = Math.max(0, start + diff);
+                el.setSelectionRange(newPos, newPos);
+            }
+        };
+
+        window.editClient = function(id) {
+            const client = clients.find(c => String(c.id) === String(id));
+            if (!client) return;
+
+            document.getElementById('editIdInput').value = client.id;
+            document.getElementById('appInput').value = client.app || 'ibo';
+            document.getElementById('nameInput').value = client.name;
+            document.getElementById('macInput').value = client.mac;
+            document.getElementById('keyInput').value = client.key;
+            document.getElementById('subNumInput').value = client.subNum || '';
+            document.getElementById('subPassInput').value = client.subPass || '';
+
+            document.getElementById('formTitle').textContent = 'تعديل بيانات العميل: ' + client.name;
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.textContent = '✓ حفظ التعديلات';
+            submitBtn.className = 'w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-sm shadow-sm transition';
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.cancelEdit = function() {
+            document.getElementById('editIdInput').value = '';
+            document.getElementById('appInput').value = currentSection;
+            document.getElementById('nameInput').value = '';
+            document.getElementById('macInput').value = '';
+            document.getElementById('keyInput').value = '';
+            document.getElementById('subNumInput').value = '';
+            document.getElementById('subPassInput').value = '';
+
+            document.getElementById('formTitle').textContent = 'إضافة عميل جديد';
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.textContent = '+ حفظ العميل';
+            submitBtn.className = 'w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-sm shadow-sm transition';
+        };
+
+        window.saveClient = async function(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editIdInput').value;
+            const appType = document.getElementById('appInput').value;
+            const name = document.getElementById('nameInput').value.trim();
+            const mac = document.getElementById('macInput').value.trim().toUpperCase();
+            const key = document.getElementById('keyInput').value.trim();
+            const subNum = document.getElementById('subNumInput').value.trim();
+            const subPass = document.getElementById('subPassInput').value.trim();
+            if (!name || !mac || !key) return;
+
+            if (editId) {
+                const idx = clients.findIndex(c => String(c.id) === String(editId));
+                if (idx !== -1) {
+                    clients[idx] = { ...clients[idx], app: appType, name, mac, key, subNum, subPass };
+                    saveLocalBackup();
+                }
+                setSection(appType);
+                cancelEdit();
+                showToast('تم حفظ التعديلات');
+
+                if (cloudReady && currentUser) {
+                    try {
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', String(editId)), {
+                            app: appType, name, mac, key, subNum, subPass
+                        });
+                    } catch (err) {
+                        console.error("Cloud update error:", err);
+                    }
+                }
+            } else {
+                const tempId = 'local_' + Date.now();
+                const newItem = {
+                    id: tempId,
+                    app: appType,
+                    name,
+                    mac,
+                    key,
+                    subNum,
+                    subPass,
+                    createdAt: Date.now()
+                };
+
+                clients.unshift(newItem);
+                saveLocalBackup();
+                setSection(appType);
+                cancelEdit();
+                showToast('تم حفظ العميل بنجاح');
+
+                if (cloudReady && currentUser) {
+                    try {
+                        await addDoc(getClientsCol(), {
+                            app: appType,
+                            name,
+                            mac,
+                            key,
+                            subNum,
+                            subPass,
+                            createdAt: newItem.createdAt
+                        });
+                    } catch (err) {
+                        console.error("Cloud add error:", err);
+                        showToast('حُفظ محلياً (تحقق من صلاحيات Firestore)');
+                    }
+                }
+            }
+        };
+
+        window.deleteClient = async function(id) {
+            clients = clients.filter(c => String(c.id) !== String(id));
+            saveLocalBackup();
+            renderList();
+            showToast('تم حذف العميل');
+
+            if (cloudReady && currentUser && !String(id).startsWith('local_')) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', String(id)));
+                } catch (err) {
+                    console.error("Cloud delete error:", err);
+                }
+            }
+        };
+
+        window.copyText = function(text, label) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast(label);
+        };
+
+        let toastTimer;
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('opacity-0');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.add('opacity-0'), 2500);
+        }
+
+        window.renderList = function() {
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            const container = document.getElementById('clientsList');
+            const emptyMsg = document.getElementById('emptyMsg');
+
+            document.getElementById('count-ibo').textContent = clients.filter(c => (c.app || 'ibo') === 'ibo').length;
+            document.getElementById('count-shamel').textContent = clients.filter(c => c.app === 'shamel').length;
+
+            const filtered = clients.filter(c => {
+                const clientApp = c.app || 'ibo';
+                const matchesSection = clientApp === currentSection;
+                const matchesSearch = c.name.toLowerCase().includes(q) ||
+                    c.mac.toLowerCase().includes(q) ||
+                    (c.subNum && c.subNum.toLowerCase().includes(q)) ||
+                    (c.subPass && c.subPass.toLowerCase().includes(q));
+                return matchesSection && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                emptyMsg.classList.remove('hidden');
+                return;
+            }
+
+            emptyMsg.classList.add('hidden');
+            container.innerHTML = filtered.map(c => {
+                const appInfo = APP_CONFIG[c.app || 'ibo'];
+                const hostsHtml = dailyHosts.length > 0
+                    ? dailyHosts.map((h, idx) => `
+                        <div class="bg-white/90 p-2 rounded-xl border border-amber-200/80 flex items-center justify-between gap-2">
+                            <div class="overflow-hidden">
+                                <span class="text-[10px] text-amber-800 block font-extrabold">🌐 ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}</span>
+                                <code class="text-xs font-bold text-slate-800 mono block truncate" dir="ltr">${escapeHtml(h.url)}</code>
+                            </div>
+                            <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
+                                class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 transition">
+                                نسخ الهوست
+                            </button>
+                        </div>
+                    `).join('')
+                    : '<div class="text-[11px] text-amber-800/70 px-1">لا يوجد هوست مضاف بالأعلى حالياً</div>';
+
+                const hasSubDetails = c.subNum || c.subPass;
+
+                return `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col gap-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <span class="font-extrabold text-slate-800 text-base">${escapeHtml(c.name)}</span>
+                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-lg border ${appInfo.badgeClass}">
+                                ${appInfo.label}
+                            </span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <button type="button" onclick="shareClientLink('${c.id}')"
+                                class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-2.5 py-1.5 rounded-xl text-xs transition flex items-center gap-1">
+                                <span>🔗 مشاركة</span>
+                            </button>
+                            ${personalPin ? `
+                            <button type="button" onclick="copyText('${escapeHtml(personalPin)}', 'تم نسخ رقم قفل البيانات')"
+                                class="bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold px-2.5 py-1.5 rounded-xl text-xs transition">
+                                🔒 نسخ القفل
+                            </button>
+                            ` : ''}
+                            <a href="${appInfo.url}" target="_blank" rel="noopener noreferrer"
+                                onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك وفتح الموقع')"
+                                class="${appInfo.btnClass} font-bold px-3 py-1.5 rounded-xl text-xs transition">
+                                ${appInfo.btnText}
+                            </a>
+                            <button type="button" onclick="editClient('${c.id}')"
+                                class="bg-slate-100 hover:bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1.5 rounded-xl text-xs transition">
+                                تعديل
+                            </button>
+                            <button type="button" onclick="deleteClient('${c.id}')"
+                                class="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2.5 py-1.5 rounded-xl text-xs transition">
+                                حذف
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- المجموعة الأولى: بيانات العميل (التطبيق: MAC + Key) -->
+                    <div class="bg-slate-50/90 p-3 rounded-xl border border-slate-200/70 space-y-2">
+                        <span class="text-[11px] font-extrabold text-indigo-700 block">📱 بيانات العميل (التطبيق)</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div class="bg-white p-2.5 rounded-xl border border-slate-200/60 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden">
+                                    <span class="text-[10px] text-slate-400 block font-bold">MAC</span>
+                                    <code class="text-sm font-bold text-indigo-700 mono inline-block" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">${escapeHtml(c.mac)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك')"
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 transition">
+                                    نسخ الماك
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-2.5 rounded-xl border border-slate-200/60 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden">
+                                    <span class="text-[10px] text-slate-400 block font-bold">الرقم السري للتطبيق (Key)</span>
+                                    <code class="text-sm font-bold text-slate-800 mono" dir="ltr">${escapeHtml(c.key)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(c.key)}', 'تم نسخ الرقم السري للتطبيق')"
+                                    class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 transition">
+                                    نسخ السري
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- المجموعة الثانية: بيانات الاشتراك (الهوست + رقم الاشتراك + الرقم السري للاشتراك) -->
+                    <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200/80 space-y-2">
+                        <span class="text-[11px] font-extrabold text-amber-900 block">🔑 بيانات الاشتراك</span>
+                        
+                        ${hostsHtml}
+
+                        ${hasSubDetails ? `
+                        <div class="grid grid-cols-1 ${c.subNum && c.subPass ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} gap-2 pt-0.5">
+                            ${c.subNum ? `
+                            <div class="bg-white p-2.5 rounded-xl border border-amber-200/70 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden">
+                                    <span class="text-[10px] text-slate-400 block font-bold">رقم الاشتراك (Username)</span>
+                                    <code class="text-sm font-bold text-teal-700 mono" dir="ltr">${escapeHtml(c.subNum)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(c.subNum)}', 'تم نسخ رقم الاشتراك')"
+                                    class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 transition">
+                                    نسخ الاشتراك
+                                </button>
+                            </div>
+                            ` : ''}
+
+                            ${c.subPass ? `
+                            <div class="bg-white p-2.5 rounded-xl border border-amber-200/70 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden">
+                                    <span class="text-[10px] text-slate-400 block font-bold">الرقم السري للاشتراك (Password)</span>
+                                    <code class="text-sm font-bold text-rose-700 mono" dir="ltr">${escapeHtml(c.subPass)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(c.subPass)}', 'تم نسخ الرقم السري للاشتراك')"
+                                    class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 transition">
+                                    نسخ سري الاشتراك
+                                </button>
+                            </div>
+                            ` : ''}
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `}).join('');
+        };
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        // تصدير نسخة احتياطية كاملة بصيغة JSON
+        window.exportBackup = function() {
+            const backupData = {
+                version: 3,
+                exportedAt: new Date().toISOString(),
+                personalPin: personalPin,
+                dailyHosts: dailyHosts,
+                dailyHost: dailyHosts[0]?.url || '',
+                clients: clients.map(c => ({
+                    app: c.app || 'ibo',
+                    name: c.name,
+                    mac: c.mac,
+                    key: c.key,
+                    subNum: c.subNum || '',
+                    subPass: c.subPass || '',
+                    createdAt: Number(c.createdAt) || Date.now()
+                }))
+            };
+
+            const jsonStr = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `iptv-backup-${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`تم تصدير النسخة الاحتياطية (${clients.length} عميل)`);
+        };
+
+        // استيراد نسخة احتياطية كاملة بصيغة JSON
+        window.importBackup = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    const importedClients = Array.isArray(parsed) ? parsed : parsed.clients;
+
+                    if (!Array.isArray(importedClients)) {
+                        showToast('صيغة ملف النسخة الاحتياطية غير صحيحة');
+                        return;
+                    }
+
+                    // استعادة الرقم السري الخاص بقفل البيانات إذا كان موجوداً في الملف
+                    if (typeof parsed.personalPin === 'string' && parsed.personalPin.trim() !== '') {
+                        personalPin = parsed.personalPin.trim();
+                        saveLocalPersonalPin();
+                        renderPersonalPinUI();
+                        if (cloudReady && currentUser) {
+                            await setDoc(getSettingsDoc(), { personalPin, updatedAt: Date.now() }, { merge: true });
+                        }
+                    }
+
+                    // استعادة هوستات اليوم إذا كانت موجودة في الملف
+                    if (Array.isArray(parsed.dailyHosts) && parsed.dailyHosts.length > 0) {
+                        for (const h of parsed.dailyHosts) {
+                            if (!h.url) continue;
+                            const exists = dailyHosts.some(existing => existing.url === h.url);
+                            if (!exists) {
+                                dailyHosts.push({
+                                    id: h.id || ('h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5)),
+                                    label: h.label || `هوست ${dailyHosts.length + 1}`,
+                                    url: String(h.url).trim()
+                                });
+                            }
+                        }
+                        saveLocalHosts();
+                        renderHostsManager();
+                        await syncHostsToCloud();
+                    } else if (parsed.dailyHost !== undefined && parsed.dailyHost !== '') {
+                        const urlTrimmed = String(parsed.dailyHost).trim();
+                        if (!dailyHosts.some(existing => existing.url === urlTrimmed)) {
+                            dailyHosts.push({
+                                id: 'h_' + Date.now(),
+                                label: `هوست ${dailyHosts.length + 1}`,
+                                url: urlTrimmed
+                            });
+                            saveLocalHosts();
+                            renderHostsManager();
+                            await syncHostsToCloud();
+                        }
+                    }
+
+                    // إضافة العملاء الجدد مع تجنب تكرار نفس الماك والتطبيق
+                    let addedCount = 0;
+                    for (const item of importedClients) {
+                        if (!item.name || !item.mac || !item.key) continue;
+                        const appType = item.app === 'shamel' ? 'shamel' : 'ibo';
+                        const macClean = String(item.mac).trim().toUpperCase();
+                        const nameClean = String(item.name).trim();
+                        const keyClean = String(item.key).trim();
+                        const subNumClean = item.subNum ? String(item.subNum).trim() : '';
+                        const subPassClean = item.subPass ? String(item.subPass).trim() : '';
+
+                        const exists = clients.some(c =>
+                            (c.app || 'ibo') === appType &&
+                            c.mac.toUpperCase() === macClean
+                        );
+
+                        if (!exists) {
+                            const newClient = {
+                                id: 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                                app: appType,
+                                name: nameClean,
+                                mac: macClean,
+                                key: keyClean,
+                                subNum: subNumClean,
+                                subPass: subPassClean,
+                                createdAt: Number(item.createdAt) || Date.now()
+                            };
+                            clients.unshift(newClient);
+                            addedCount++;
+
+                            if (cloudReady && currentUser) {
+                                await addDoc(getClientsCol(), {
+                                    app: appType,
+                                    name: nameClean,
+                                    mac: macClean,
+                                    key: keyClean,
+                                    subNum: subNumClean,
+                                    subPass: subPassClean,
+                                    createdAt: newClient.createdAt
+                                });
+                            }
+                        }
+                    }
+
+                    saveLocalBackup();
+                    renderList();
+                    showToast(`تم الاستيراد بنجاح (أُضيف ${addedCount} عميل جديد)`);
+                } catch (err) {
+                    console.error('Import error:', err);
+                    showToast('حدث خطأ أثناء قراءة ملف النسخة الاحتياطية');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        // توليد ونسخ رابط مشاركة بيانات العميل عبر https://school1school2-stack.github.io/ibo/
+        const SHARE_BASE_URL = 'https://school1school2-stack.github.io/ibo/';
+
+        window.shareClientLink = async function(id) {
+            const client = clients.find(c => String(c.id) === String(id));
+            if (!client) return;
+
+            const payload = {
+                app: client.app || 'ibo',
+                name: client.name,
+                mac: client.mac,
+                key: client.key,
+                subNum: client.subNum || '',
+                subPass: client.subPass || '',
+                hosts: dailyHosts.map(h => ({ label: h.label || '', url: h.url }))
+            };
+
+            const jsonStr = JSON.stringify(payload);
+            const encoded = btoa(unescape(encodeURIComponent(jsonStr)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+
+            const shareUrl = `${SHARE_BASE_URL}?c=${encoded}`;
+            copyText(shareUrl, `تم نسخ رابط مشاركة العميل (${client.name})`);
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: `بيانات اشتراك - ${client.name}`,
+                        text: `بيانات اشتراك ${client.name} (${APP_CONFIG[client.app || 'ibo'].label})`,
+                        url: shareUrl
+                    });
+                } catch (err) {
+                    // تم إلغاء نافذة المشاركة من المستخدم، الرابط منسوخ مسبقاً
+                }
+            }
+        };
+
+        // استلام بيانات العميل تلقائياً عند فتح رابط المشاركة
+        async function handleIncomingShareLink() {
+            const params = new URLSearchParams(window.location.search);
+            const encoded = params.get('c');
+            if (!encoded) return;
+
+            try {
+                let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+                while (b64.length % 4) b64 += '=';
+                const jsonStr = decodeURIComponent(escape(atob(b64)));
+                const shared = JSON.parse(jsonStr);
+
+                if (shared && shared.name && shared.mac && shared.key) {
+                    const appType = shared.app === 'shamel' ? 'shamel' : 'ibo';
+                    const macClean = String(shared.mac).trim().toUpperCase();
+
+                    if (Array.isArray(shared.hosts) && shared.hosts.length > 0) {
+                        let hostsAdded = false;
+                        for (const h of shared.hosts) {
+                            if (h.url && !dailyHosts.some(ex => ex.url === h.url)) {
+                                dailyHosts.push({
+                                    id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                                    label: h.label || `هوست ${dailyHosts.length + 1}`,
+                                    url: String(h.url).trim()
+                                });
+                                hostsAdded = true;
+                            }
+                        }
+                        if (hostsAdded) {
+                            saveLocalHosts();
+                            renderHostsManager();
+                        }
+                    }
+
+                    const existingIdx = clients.findIndex(c => (c.app || 'ibo') === appType && c.mac.toUpperCase() === macClean);
+                    if (existingIdx === -1) {
+                        clients.unshift({
+                            id: 'shared_' + Date.now(),
+                            app: appType,
+                            name: String(shared.name).trim(),
+                            mac: macClean,
+                            key: String(shared.key).trim(),
+                            subNum: shared.subNum ? String(shared.subNum).trim() : '',
+                            subPass: shared.subPass ? String(shared.subPass).trim() : '',
+                            createdAt: Date.now()
+                        });
+                        saveLocalBackup();
+                    }
+
+                    setSection(appType);
+                    document.getElementById('searchInput').value = String(shared.name).trim();
+                    renderList();
+                    showToast(`تم فتح بيانات العميل: ${shared.name}`);
+
+                    // تنظيف الرابط من شريط العنوان بعد الاستيراد
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            } catch (err) {
+                console.error('Failed to parse shared link:', err);
+            }
+        }
+
+        handleIncomingShareLink();
+        initCloudSync();
+    </script>
+</body>
+</html>
