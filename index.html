@@ -22,7 +22,6 @@
          وضع العميل فقط (للقراءة والنسخ بدون أي صلاحية تعديل أو إدارة)
          ========================================================= -->
     <div id="clientViewContainer" class="hidden min-h-screen flex flex-col">
-        <!-- هيدر العميل المبسط -->
         <header class="bg-indigo-700 text-white shadow-md">
             <div class="max-w-xl mx-auto px-4 py-4 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5">
@@ -38,11 +37,8 @@
             </div>
         </header>
 
-        <!-- بطاقة بيانات العميل للقراءة والنسخ فقط -->
         <main class="max-w-xl w-full mx-auto px-4 pt-6 flex-1 space-y-4">
             <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/90 space-y-5">
-                
-                <!-- ترحيب باسم العميل + زر فتح الموقع الرسمي -->
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
                     <div>
                         <span class="text-xs text-slate-400 font-bold block">مرحباً بك</span>
@@ -54,14 +50,12 @@
                     </a>
                 </div>
 
-                <!-- أولاً: بيانات التطبيق (MAC & Device Key) -->
                 <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2.5">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-extrabold text-indigo-800">📱 بيانات التطبيق (Device Info)</span>
                         <span class="text-[10px] text-slate-400 font-bold">اضغط على زر النسخ</span>
                     </div>
 
-                    <!-- MAC Address -->
                     <div class="bg-white p-3 rounded-xl border border-slate-200/70 flex items-center justify-between gap-2">
                         <div class="overflow-hidden">
                             <span class="text-[11px] text-slate-400 block font-bold">الماك أدريس (MAC Address)</span>
@@ -73,7 +67,6 @@
                         </button>
                     </div>
 
-                    <!-- Device Key -->
                     <div class="bg-white p-3 rounded-xl border border-slate-200/70 flex items-center justify-between gap-2">
                         <div class="overflow-hidden">
                             <span class="text-[11px] text-slate-400 block font-bold">الرقم السري للتطبيق (Device Key)</span>
@@ -86,14 +79,10 @@
                     </div>
                 </div>
 
-                <!-- ثانياً: بيانات الاشتراك والهوستات (إن وجدت) -->
                 <div id="cvSubSection" class="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200/90 space-y-2.5">
                     <span class="text-xs font-extrabold text-amber-900 block">🔑 بيانات السيرفر والاشتراك</span>
-
-                    <!-- قائمة الهوستات -->
                     <div id="cvHostsList" class="space-y-2"></div>
 
-                    <!-- رقم الاشتراك -->
                     <div id="cvSubNumBox" class="hidden bg-white p-3 rounded-xl border border-amber-200/70 flex items-center justify-between gap-2">
                         <div class="overflow-hidden">
                             <span class="text-[11px] text-slate-400 block font-bold">اسم المستخدم / رقم الاشتراك (Username)</span>
@@ -105,7 +94,6 @@
                         </button>
                     </div>
 
-                    <!-- الرقم السري للاشتراك -->
                     <div id="cvSubPassBox" class="hidden bg-white p-3 rounded-xl border border-amber-200/70 flex items-center justify-between gap-2">
                         <div class="overflow-hidden">
                             <span class="text-[11px] text-slate-400 block font-bold">كلمة المرور للاشتراك (Password)</span>
@@ -118,7 +106,6 @@
                     </div>
                 </div>
 
-                <!-- زر نسخ جميع البيانات دفعة واحدة -->
                 <button type="button" id="cvCopyAllBtn"
                     class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-extrabold py-3 rounded-2xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2">
                     <span>📄 نسخ جميع البيانات كنص واحد</span>
@@ -132,10 +119,9 @@
     </div>
 
     <!-- =========================================================
-         لوحة الإدارة الكاملة (تظهر للمدير فقط عند فتح الرابط الرئيسي)
+         لوحة الإدارة الكاملة
          ========================================================= -->
     <div id="adminViewContainer">
-        <!-- الهيدر -->
         <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-20">
             <div class="max-w-3xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5">
@@ -159,7 +145,7 @@
 
         <main class="max-w-3xl mx-auto px-4 pt-5 space-y-5">
 
-            <!-- قسم هوستات اليوم (يدعم إضافة أكثر من هوست ويظهر تلقائياً لكل عميل) -->
+            <!-- قسم هوستات اليوم -->
             <section class="bg-amber-50 p-4 rounded-2xl shadow-sm border border-amber-200/90 space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
@@ -188,7 +174,7 @@
                 <div id="hostsListContainer" class="space-y-1.5"></div>
             </section>
 
-            <!-- قسم النسخ الاحتياطي (تصدير واستيراد كامل) + الرقم السري الخاص بقفل البيانات -->
+            <!-- قسم النسخ الاحتياطي + الرقم السري -->
             <section class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
@@ -210,7 +196,6 @@
                     </div>
                 </div>
 
-                <!-- شريط الرقم السري الخاص بقفل البيانات (IBO & Shamel TV) -->
                 <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
                     <div class="flex items-center gap-2">
                         <span class="text-base">🔒</span>
@@ -244,8 +229,7 @@
                 </div>
                 <form id="clientForm" onsubmit="saveClient(event)" class="space-y-4">
                     <input type="hidden" id="editIdInput" value="">
-                    
-                    <!-- القسم الأول: بيانات العميل والتطبيق -->
+
                     <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100 space-y-3">
                         <div class="text-xs font-extrabold text-indigo-800 flex items-center gap-1.5">
                             <span>📱 بيانات العميل (التطبيق)</span>
@@ -279,7 +263,6 @@
                         </div>
                     </div>
 
-                    <!-- القسم الثاني: بيانات الاشتراك (رقم الاشتراك + الرقم السري للاشتراك) -->
                     <div class="bg-amber-50/60 p-3.5 rounded-xl border border-amber-200/70 space-y-3">
                         <div class="flex flex-wrap items-center justify-between gap-1">
                             <span class="text-xs font-extrabold text-amber-900">🔑 بيانات الاشتراك (مع هوستات اليوم)</span>
@@ -308,12 +291,11 @@
                 </form>
             </section>
 
-            <!-- مربع البحث وأقسام العرض المنفصلة -->
+            <!-- البحث والأقسام -->
             <div class="space-y-3">
                 <input type="text" id="searchInput" oninput="renderList()" placeholder="🔍 ابحث بالاسم أو الماك..."
                     class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 focus:border-indigo-500 outline-none text-sm shadow-sm">
-                
-                <!-- أزرار التبديل بين قسم IBO وقسم Shamel.tv لحالهم -->
+
                 <div class="grid grid-cols-2 gap-2.5 bg-slate-200/70 p-1.5 rounded-2xl">
                     <button type="button" onclick="setSection('ibo')" id="tab-ibo"
                         class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-2">
@@ -328,7 +310,6 @@
                 </div>
             </div>
 
-            <!-- ترويسة القسم النشط -->
             <div id="sectionHeader" class="flex items-center justify-between px-1">
                 <h3 id="activeSectionTitle" class="text-base font-extrabold text-slate-800 flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
@@ -337,10 +318,8 @@
                 <span id="activeSectionSubtitle" class="text-xs font-bold text-slate-500">يظهر هنا عملاء IBO فقط</span>
             </div>
 
-            <!-- قائمة عملاء القسم المختار -->
             <section id="clientsList" class="space-y-3"></section>
 
-            <!-- رسالة عند الفراغ -->
             <div id="emptyMsg" class="hidden text-center py-10 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-400 text-sm">
                 لا يوجد عملاء محفوظون في هذا القسم حالياً
             </div>
@@ -348,7 +327,6 @@
         </main>
     </div>
 
-    <!-- إشعار النسخ -->
     <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-lg opacity-0 pointer-events-none transition-opacity duration-200 z-50">
         تم النسخ!
     </div>
@@ -358,7 +336,6 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // إعدادات المشروع ibo-tv-410db
         const defaultFirebaseConfig = {
             apiKey: "AIzaSyCIDNuiKnNw0YzKmoRZQ67pafsThEUxw1E",
             authDomain: "ibo-tv-410db.firebaseapp.com",
@@ -452,17 +429,21 @@
                 : 'text-[11px] bg-amber-500/20 text-amber-200 border border-amber-400/30 px-2.5 py-0.5 rounded-full font-bold';
         }
 
-        async function syncHostsToCloud() {
-            if (cloudReady && currentUser) {
-                try {
-                    await setDoc(getSettingsDoc(), {
-                        dailyHosts: dailyHosts,
-                        dailyHost: dailyHosts[0]?.url || '',
-                        updatedAt: Date.now()
-                    }, { merge: true });
-                } catch (err) {
-                    console.error("Hosts sync error:", err);
-                }
+        async function syncSettingsToCloud(extraFields = {}) {
+            if (!cloudReady || !currentUser) return false;
+            try {
+                await setDoc(getSettingsDoc(), {
+                    dailyHosts: dailyHosts,
+                    dailyHost: dailyHosts[0]?.url || '',
+                    personalPin: personalPin,
+                    updatedAt: Date.now(),
+                    ...extraFields
+                }, { merge: true });
+                return true;
+            } catch (err) {
+                console.error("Settings sync error:", err);
+                showToast('تعذر الحفظ السحابي: تحقق من صلاحيات Firestore');
+                return false;
             }
         }
 
@@ -520,8 +501,8 @@
             saveLocalHosts();
             renderHostsManager();
             renderList();
-            showToast('تمت إضافة الهوست بنجاح');
-            await syncHostsToCloud();
+            const synced = await syncSettingsToCloud();
+            showToast(synced ? 'تمت إضافة الهوست وحفظه في السحابة' : 'أُضيف محلياً (فشل الحفظ السحابي)');
         };
 
         function renderPersonalPinUI() {
@@ -544,17 +525,11 @@
             saveLocalPersonalPin();
             renderPersonalPinUI();
             renderList();
-            showToast(personalPin ? 'تم حفظ الرقم السري الخاص بك' : 'تم مسح الرقم السري');
-
-            if (cloudReady && currentUser) {
-                try {
-                    await setDoc(getSettingsDoc(), {
-                        personalPin: personalPin,
-                        updatedAt: Date.now()
-                    }, { merge: true });
-                } catch (err) {
-                    console.error("PIN sync error:", err);
-                }
+            const synced = await syncSettingsToCloud();
+            if (!personalPin) {
+                showToast('تم مسح الرقم السري');
+            } else {
+                showToast(synced ? 'تم حفظ الرقم السري في السحابة' : 'حُفظ محلياً (فشل الحفظ السحابي)');
             }
         };
 
@@ -571,6 +546,7 @@
                 saveLocalPersonalPin();
                 renderPersonalPinUI();
                 renderList();
+                syncSettingsToCloud();
             }
             copyText(pinToCopy, 'تم نسخ الرقم السري الخاص بك');
         };
@@ -580,14 +556,16 @@
             saveLocalHosts();
             renderHostsManager();
             renderList();
-            showToast('تم حذف الهوست');
-            await syncHostsToCloud();
+            const synced = await syncSettingsToCloud();
+            showToast(synced ? 'تم حذف الهوست من السحابة' : 'تم الحذف محلياً');
         };
 
         async function initCloudSync() {
             renderPersonalPinUI();
             renderHostsManager();
             renderList();
+            updateStatusBadge('جاري تسجيل الدخول...', false);
+
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     const cred = await signInWithCustomToken(auth, __initial_auth_token);
@@ -597,7 +575,6 @@
                     currentUser = cred.user;
                 }
 
-                // الاستماع لهوستات اليوم والرقم السري الخاص من السحابة
                 onSnapshot(getSettingsDoc(), (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data();
@@ -617,15 +594,13 @@
                             renderHostsManager();
                             renderList();
                         }
-                    } else if (dailyHosts.length > 0 || personalPin) {
-                        syncHostsToCloud();
-                        if (personalPin) {
-                            setDoc(getSettingsDoc(), { personalPin }, { merge: true });
-                        }
+                    } else if (cloudReady && (dailyHosts.length > 0 || personalPin)) {
+                        syncSettingsToCloud();
                     }
+                }, (err) => {
+                    console.error("Settings snapshot error:", err);
                 });
 
-                // الاستماع المباشر لقائمة العملاء
                 onSnapshot(getClientsCol(), async (snapshot) => {
                     cloudReady = true;
                     updateStatusBadge('متصل بالسحابة ●', true);
@@ -634,15 +609,19 @@
 
                     if (cloudList.length === 0 && clients.length > 0) {
                         for (const item of clients) {
-                            await addDoc(getClientsCol(), {
-                                app: item.app || 'ibo',
-                                name: item.name,
-                                mac: item.mac,
-                                key: item.key,
-                                subNum: item.subNum || '',
-                                subPass: item.subPass || '',
-                                createdAt: Number(item.createdAt) || Date.now()
-                            });
+                            try {
+                                await addDoc(getClientsCol(), {
+                                    app: item.app || 'ibo',
+                                    name: item.name,
+                                    mac: item.mac,
+                                    key: item.key,
+                                    subNum: item.subNum || '',
+                                    subPass: item.subPass || '',
+                                    createdAt: Number(item.createdAt) || Date.now()
+                                });
+                            } catch (e) {
+                                console.error("Initial seed error:", e);
+                            }
                         }
                         return;
                     }
@@ -653,12 +632,17 @@
                 }, (error) => {
                     console.error("Cloud sync error:", error);
                     cloudReady = false;
-                    updateStatusBadge('حفظ محلي (تحقق من قواعد Firestore)', false);
+                    updateStatusBadge('حفظ محلي (راجع قواعد Firestore)', false);
                 });
             } catch (err) {
                 console.error("Auth error:", err);
                 cloudReady = false;
-                updateStatusBadge('حفظ محلي (فعّل Anonymous Auth)', false);
+                const code = err?.code || '';
+                if (code === 'auth/admin-restricted-operation' || code === 'auth/operation-not-allowed') {
+                    updateStatusBadge('حفظ محلي (فعّل Anonymous Auth)', false);
+                } else {
+                    updateStatusBadge('حفظ محلي (تعذر الاتصال بالسحابة)', false);
+                }
             }
         }
 
@@ -757,16 +741,19 @@
                 }
                 setSection(appType);
                 cancelEdit();
-                showToast('تم حفظ التعديلات');
 
                 if (cloudReady && currentUser) {
                     try {
                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', String(editId)), {
                             app: appType, name, mac, key, subNum, subPass
                         });
+                        showToast('تم حفظ التعديلات في السحابة');
                     } catch (err) {
                         console.error("Cloud update error:", err);
+                        showToast('حُفظ محلياً (فشل التحديث السحابي)');
                     }
+                } else {
+                    showToast('حُفظ محلياً (غير متصل بالسحابة)');
                 }
             } else {
                 const tempId = 'local_' + Date.now();
@@ -785,7 +772,6 @@
                 saveLocalBackup();
                 setSection(appType);
                 cancelEdit();
-                showToast('تم حفظ العميل بنجاح');
 
                 if (cloudReady && currentUser) {
                     try {
@@ -798,10 +784,13 @@
                             subPass,
                             createdAt: newItem.createdAt
                         });
+                        showToast('تم حفظ العميل في السحابة بنجاح');
                     } catch (err) {
                         console.error("Cloud add error:", err);
-                        showToast('حُفظ محلياً (تحقق من صلاحيات Firestore)');
+                        showToast('حُفظ محلياً فقط (تحقق من صلاحيات Firestore)');
                     }
+                } else {
+                    showToast('حُفظ محلياً فقط (غير متصل بالسحابة)');
                 }
             }
         };
@@ -810,14 +799,17 @@
             clients = clients.filter(c => String(c.id) !== String(id));
             saveLocalBackup();
             renderList();
-            showToast('تم حذف العميل');
 
             if (cloudReady && currentUser && !String(id).startsWith('local_')) {
                 try {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', String(id)));
+                    showToast('تم حذف العميل من السحابة');
                 } catch (err) {
                     console.error("Cloud delete error:", err);
+                    showToast('حُذف محلياً (فشل الحذف السحابي)');
                 }
+            } else {
+                showToast('تم حذف العميل');
             }
         };
 
@@ -916,7 +908,6 @@
                         </div>
                     </div>
 
-                    <!-- المجموعة الأولى: بيانات العميل (التطبيق: MAC + Key) -->
                     <div class="bg-slate-50/90 p-3 rounded-xl border border-slate-200/70 space-y-2">
                         <span class="text-[11px] font-extrabold text-indigo-700 block">📱 بيانات العميل (التطبيق)</span>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -944,12 +935,9 @@
                         </div>
                     </div>
 
-                    <!-- المجموعة الثانية: بيانات الاشتراك (الهوست + رقم الاشتراك + الرقم السري للاشتراك) -->
                     <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200/80 space-y-2">
                         <span class="text-[11px] font-extrabold text-amber-900 block">🔑 بيانات الاشتراك</span>
-                        
                         ${hostsHtml}
-
                         ${hasSubDetails ? `
                         <div class="grid grid-cols-1 ${c.subNum && c.subPass ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} gap-2 pt-0.5">
                             ${c.subNum ? `
@@ -990,7 +978,6 @@
             }[m]));
         }
 
-        // تصدير نسخة احتياطية كاملة بصيغة JSON
         window.exportBackup = function() {
             const backupData = {
                 version: 3,
@@ -1024,7 +1011,6 @@
             showToast(`تم تصدير النسخة الاحتياطية (${clients.length} عميل)`);
         };
 
-        // استيراد نسخة احتياطية كاملة بصيغة JSON
         window.importBackup = function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1040,17 +1026,14 @@
                         return;
                     }
 
-                    // استعادة الرقم السري الخاص بقفل البيانات إذا كان موجوداً في الملف
+                    let settingsChanged = false;
                     if (typeof parsed.personalPin === 'string' && parsed.personalPin.trim() !== '') {
                         personalPin = parsed.personalPin.trim();
                         saveLocalPersonalPin();
                         renderPersonalPinUI();
-                        if (cloudReady && currentUser) {
-                            await setDoc(getSettingsDoc(), { personalPin, updatedAt: Date.now() }, { merge: true });
-                        }
+                        settingsChanged = true;
                     }
 
-                    // استعادة هوستات اليوم إذا كانت موجودة في الملف
                     if (Array.isArray(parsed.dailyHosts) && parsed.dailyHosts.length > 0) {
                         for (const h of parsed.dailyHosts) {
                             if (!h.url) continue;
@@ -1061,11 +1044,11 @@
                                     label: h.label || `هوست ${dailyHosts.length + 1}`,
                                     url: String(h.url).trim()
                                 });
+                                settingsChanged = true;
                             }
                         }
                         saveLocalHosts();
                         renderHostsManager();
-                        await syncHostsToCloud();
                     } else if (parsed.dailyHost !== undefined && parsed.dailyHost !== '') {
                         const urlTrimmed = String(parsed.dailyHost).trim();
                         if (!dailyHosts.some(existing => existing.url === urlTrimmed)) {
@@ -1076,11 +1059,14 @@
                             });
                             saveLocalHosts();
                             renderHostsManager();
-                            await syncHostsToCloud();
+                            settingsChanged = true;
                         }
                     }
 
-                    // إضافة العملاء الجدد مع تجنب تكرار نفس الماك والتطبيق
+                    if (settingsChanged) {
+                        await syncSettingsToCloud();
+                    }
+
                     let addedCount = 0;
                     for (const item of importedClients) {
                         if (!item.name || !item.mac || !item.key) continue;
@@ -1137,9 +1123,6 @@
             reader.readAsText(file);
         };
 
-        // =========================================================
-        // نظام مشاركة بيانات العميل للقراءة والنسخ فقط (Read-Only Client Mode)
-        // =========================================================
         const SHARE_BASE_URL = 'https://school1school2-stack.github.io/ibo/';
 
         function encodePayloadUTF8(obj) {
@@ -1171,7 +1154,6 @@
             const client = clients.find(c => String(c.id) === String(id));
             if (!client) return;
 
-            // تضمين بيانات العميل فقط + هوستات اليوم في الرابط المشفر بدون باراميترات عربية طويلة
             const compactPayload = {
                 a: client.app || 'ibo',
                 n: client.name,
@@ -1195,12 +1177,11 @@
                         url: shareUrl
                     });
                 } catch (err) {
-                    // تم إلغاء نافذة المشاركة، الرابط منسوخ مسبقاً
+                    // تم إلغاء نافذة المشاركة
                 }
             }
         };
 
-        // تفعيل واجهة العميل للقراءة فقط وإخفاء لوحة الإدارة بالكامل
         function renderReadOnlyClientView(shared) {
             document.getElementById('adminViewContainer').classList.add('hidden');
             document.getElementById('clientViewContainer').classList.remove('hidden');
@@ -1209,7 +1190,6 @@
             const appInfo = APP_CONFIG[appType];
             document.title = `بيانات الاشتراك - ${shared.name}`;
 
-            // تعبئة الترويسة والاسم وزر الموقع الرسمي
             const badgeEl = document.getElementById('clientViewAppBadge');
             badgeEl.textContent = appInfo.label;
             badgeEl.className = appType === 'shamel'
@@ -1224,14 +1204,12 @@
             siteBtn.innerHTML = `<span>${appInfo.btnText}</span>`;
             siteBtn.onclick = () => copyText(shared.mac, 'تم نسخ الماك وفتح الموقع');
 
-            // تعبئة الماك والرقم السري للتطبيق
             document.getElementById('cvMacValue').textContent = shared.mac;
             document.getElementById('cvCopyMacBtn').onclick = () => copyText(shared.mac, 'تم نسخ الماك');
 
             document.getElementById('cvKeyValue').textContent = shared.key;
             document.getElementById('cvCopyKeyBtn').onclick = () => copyText(shared.key, 'تم نسخ الرقم السري للتطبيق');
 
-            // تعبئة الهوستات وبيانات الاشتراك (Username & Password)
             const hostsListEl = document.getElementById('cvHostsList');
             const validHosts = Array.isArray(shared.hosts) ? shared.hosts.filter(h => h && h.url) : [];
 
@@ -1264,12 +1242,10 @@
                 document.getElementById('cvCopySubPassBtn').onclick = () => copyText(shared.subPass, 'تم نسخ كلمة المرور');
             }
 
-            // إخفاء قسم بيانات السيرفر بالكامل إذا لم يكن هناك هوست أو يوزر أو باسورد
             if (validHosts.length === 0 && !shared.subNum && !shared.subPass) {
                 document.getElementById('cvSubSection').classList.add('hidden');
             }
 
-            // زر نسخ جميع البيانات دفعة واحدة
             document.getElementById('cvCopyAllBtn').onclick = () => {
                 const lines = [
                     `التطبيق: ${appInfo.label}`,
@@ -1288,7 +1264,6 @@
             };
         }
 
-        // التحقق عند فتح الصفحة: هل هو رابط عميل (للقراءة فقط) أم رابط المدير؟
         function checkRouteMode() {
             const params = new URLSearchParams(window.location.search);
             const encoded = params.get('c');
@@ -1309,7 +1284,6 @@
                     };
 
                     if (shared.mac && shared.key) {
-                        // عرض صفحة العميل للقراءة فقط دون تحميل لوحة الإدارة أو بيانات العملاء الآخرين
                         renderReadOnlyClientView(shared);
                         return;
                     }
@@ -1318,7 +1292,6 @@
                 }
             }
 
-            // في حال عدم وجود رابط عميل، يتم تشغيل لوحة الإدارة بشكل طبيعي
             initCloudSync();
         }
 
