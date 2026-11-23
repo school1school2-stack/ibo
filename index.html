@@ -782,12 +782,6 @@
                                 class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-2.5 py-1.5 rounded-xl text-xs transition flex items-center gap-1">
                                 <span>🔗 مشاركة</span>
                             </button>
-                            ${personalPin ? `
-                            <button type="button" onclick="copyText('${escapeHtml(personalPin)}', 'تم نسخ رقم قفل البيانات')"
-                                class="bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold px-2.5 py-1.5 rounded-xl text-xs transition">
-                                🔒 نسخ القفل
-                            </button>
-                            ` : ''}
                             <a href="${appInfo.url}" target="_blank" rel="noopener noreferrer"
                                 onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك وفتح الموقع')"
                                 class="${appInfo.btnClass} font-bold px-3 py-1.5 rounded-xl text-xs transition">
@@ -1011,21 +1005,7 @@
                             }
                         }
                     }
-
-                    saveLocalBackup();
-                    renderList();
-                    showToast(`تم الاستيراد بنجاح (أُضيف ${addedCount} عميل جديد)`);
-                } catch (err) {
-                    console.error('Import error:', err);
-                    showToast('حدث خطأ أثناء قراءة ملف النسخة الاحتياطية');
-                } finally {
-                    event.target.value = '';
-                }
-            };
-            reader.readAsText(file);
-        };
-
-        // توليد ونسخ رابط مشاركة بيانات العميل عبر https://school1school2-stack.github.io/ibo/
+        // توليد ونسخ رابط مشاركة بيانات العميل باسمه عبر https://school1school2-stack.github.io/ibo/
         const SHARE_BASE_URL = 'https://school1school2-stack.github.io/ibo/';
 
         window.shareClientLink = async function(id) {
@@ -1048,8 +1028,9 @@
                 .replace(/\//g, '_')
                 .replace(/=+$/, '');
 
-            const shareUrl = `${SHARE_BASE_URL}?c=${encoded}`;
-            copyText(shareUrl, `تم نسخ رابط مشاركة العميل (${client.name})`);
+            const clientSlug = encodeURIComponent(client.name.trim().replace(/\s+/g, '-'));
+            const shareUrl = `${SHARE_BASE_URL}?client=${clientSlug}&c=${encoded}`;
+            copyText(shareUrl, `تم نسخ رابط مشاركة (${client.name})`);
 
             if (navigator.share) {
                 try {
@@ -1068,6 +1049,20 @@
         async function handleIncomingShareLink() {
             const params = new URLSearchParams(window.location.search);
             const encoded = params.get('c');
+            const clientNameParam = params.get('client');
+
+            if (!encoded && clientNameParam) {
+                const decodedName = decodeURIComponent(clientNameParam).replace(/-/g, ' ').trim();
+                const found = clients.find(c => c.name.trim().toLowerCase() === decodedName.toLowerCase());
+                if (found) {
+                    setSection(found.app || 'ibo');
+                    document.getElementById('searchInput').value = found.name;
+                    renderList();
+                    showToast(`بيانات العميل: ${found.name}`);
+                }
+                return;
+            }
+
             if (!encoded) return;
 
             try {
