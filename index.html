@@ -778,6 +778,10 @@
                             </span>
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5">
+                            <button type="button" onclick="shareClientLink('${c.id}')"
+                                class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-2.5 py-1.5 rounded-xl text-xs transition flex items-center gap-1">
+                                <span>🔗 مشاركة</span>
+                            </button>
                             ${personalPin ? `
                             <button type="button" onclick="copyText('${escapeHtml(personalPin)}', 'تم نسخ رقم قفل البيانات')"
                                 class="bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold px-2.5 py-1.5 rounded-xl text-xs transition">
@@ -1021,6 +1025,108 @@
             reader.readAsText(file);
         };
 
+        // توليد ونسخ رابط مشاركة بيانات العميل عبر https://school1school2-stack.github.io/ibo/
+        const SHARE_BASE_URL = 'https://school1school2-stack.github.io/ibo/';
+
+        window.shareClientLink = async function(id) {
+            const client = clients.find(c => String(c.id) === String(id));
+            if (!client) return;
+
+            const payload = {
+                app: client.app || 'ibo',
+                name: client.name,
+                mac: client.mac,
+                key: client.key,
+                subNum: client.subNum || '',
+                subPass: client.subPass || '',
+                hosts: dailyHosts.map(h => ({ label: h.label || '', url: h.url }))
+            };
+
+            const jsonStr = JSON.stringify(payload);
+            const encoded = btoa(unescape(encodeURIComponent(jsonStr)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+
+            const shareUrl = `${SHARE_BASE_URL}?c=${encoded}`;
+            copyText(shareUrl, `تم نسخ رابط مشاركة العميل (${client.name})`);
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: `بيانات اشتراك - ${client.name}`,
+                        text: `بيانات اشتراك ${client.name} (${APP_CONFIG[client.app || 'ibo'].label})`,
+                        url: shareUrl
+                    });
+                } catch (err) {
+                    // تم إلغاء نافذة المشاركة من المستخدم، الرابط منسوخ مسبقاً
+                }
+            }
+        };
+
+        // استلام بيانات العميل تلقائياً عند فتح رابط المشاركة
+        async function handleIncomingShareLink() {
+            const params = new URLSearchParams(window.location.search);
+            const encoded = params.get('c');
+            if (!encoded) return;
+
+            try {
+                let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+                while (b64.length % 4) b64 += '=';
+                const jsonStr = decodeURIComponent(escape(atob(b64)));
+                const shared = JSON.parse(jsonStr);
+
+                if (shared && shared.name && shared.mac && shared.key) {
+                    const appType = shared.app === 'shamel' ? 'shamel' : 'ibo';
+                    const macClean = String(shared.mac).trim().toUpperCase();
+
+                    if (Array.isArray(shared.hosts) && shared.hosts.length > 0) {
+                        let hostsAdded = false;
+                        for (const h of shared.hosts) {
+                            if (h.url && !dailyHosts.some(ex => ex.url === h.url)) {
+                                dailyHosts.push({
+                                    id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                                    label: h.label || `هوست ${dailyHosts.length + 1}`,
+                                    url: String(h.url).trim()
+                                });
+                                hostsAdded = true;
+                            }
+                        }
+                        if (hostsAdded) {
+                            saveLocalHosts();
+                            renderHostsManager();
+                        }
+                    }
+
+                    const existingIdx = clients.findIndex(c => (c.app || 'ibo') === appType && c.mac.toUpperCase() === macClean);
+                    if (existingIdx === -1) {
+                        clients.unshift({
+                            id: 'shared_' + Date.now(),
+                            app: appType,
+                            name: String(shared.name).trim(),
+                            mac: macClean,
+                            key: String(shared.key).trim(),
+                            subNum: shared.subNum ? String(shared.subNum).trim() : '',
+                            subPass: shared.subPass ? String(shared.subPass).trim() : '',
+                            createdAt: Date.now()
+                        });
+                        saveLocalBackup();
+                    }
+
+                    setSection(appType);
+                    document.getElementById('searchInput').value = String(shared.name).trim();
+                    renderList();
+                    showToast(`تم فتح بيانات العميل: ${shared.name}`);
+
+                    // تنظيف الرابط من شريط العنوان بعد الاستيراد
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            } catch (err) {
+                console.error('Failed to parse shared link:', err);
+            }
+        }
+
+        handleIncomingShareLink();
         initCloudSync();
     </script>
 </body>
