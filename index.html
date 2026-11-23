@@ -1022,39 +1022,63 @@
         // توليد ونسخ رابط مشاركة بيانات العميل باسمه عبر https://school1school2-stack.github.io/ibo/
         const SHARE_BASE_URL = 'https://school1school2-stack.github.io/ibo/';
 
+        function encodePayloadUTF8(obj) {
+            const jsonStr = JSON.stringify(obj);
+            const bytes = new TextEncoder().encode(jsonStr);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary)
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+        }
+
+        function decodePayloadUTF8(b64Url) {
+            let b64 = b64Url.replace(/-/g, '+').replace(/_/g, '/');
+            while (b64.length % 4) b64 += '=';
+            const binary = atob(b64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            const jsonStr = new TextDecoder().decode(bytes);
+            return JSON.parse(jsonStr);
+        }
+
         window.shareClientLink = async function(id) {
             const client = clients.find(c => String(c.id) === String(id));
             if (!client) return;
 
-            const payload = {
-                app: client.app || 'ibo',
-                name: client.name,
-                mac: client.mac,
-                key: client.key,
-                subNum: client.subNum || '',
-                subPass: client.subPass || '',
-                hosts: dailyHosts.map(h => ({ label: h.label || '', url: h.url }))
+            // استخدام مفاتيح مختصرة لتقليل طول الرابط ومنع تقطيعه في واتساب
+            const compactPayload = {
+                a: client.app || 'ibo',
+                n: client.name,
+                m: client.mac,
+                k: client.key,
+                u: client.subNum || '',
+                p: client.subPass || '',
+                h: dailyHosts.map(h => [h.label || '', h.url])
             };
 
-            const jsonStr = JSON.stringify(payload);
-            const encoded = btoa(unescape(encodeURIComponent(jsonStr)))
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=+$/, '');
+            const encoded = encodePayloadUTF8(compactPayload);
+            const urlObj = new URL(SHARE_BASE_URL);
+            urlObj.searchParams.set('client', client.name.trim());
+            urlObj.searchParams.set('c', encoded);
 
-            const clientSlug = encodeURIComponent(client.name.trim().replace(/\s+/g, '-'));
-            const shareUrl = `${SHARE_BASE_URL}?client=${clientSlug}&c=${encoded}`;
+            const shareUrl = urlObj.toString();
             copyText(shareUrl, `تم نسخ رابط مشاركة (${client.name})`);
 
             if (navigator.share) {
                 try {
                     await navigator.share({
                         title: `بيانات اشتراك - ${client.name}`,
-                        text: `بيانات اشتراك ${client.name} (${APP_CONFIG[client.app || 'ibo'].label})`,
+                        text: `بيانات اشتراك ${client.name}`,
                         url: shareUrl
                     });
                 } catch (err) {
-                    // تم إلغاء نافذة المشاركة من المستخدم، الرابط منسوخ مسبقاً
+                    // تم إلغاء نافذة المشاركة، الرابط منسوخ مسبقاً
                 }
             }
         };
@@ -1066,7 +1090,7 @@
             const clientNameParam = params.get('client');
 
             if (!encoded && clientNameParam) {
-                const decodedName = decodeURIComponent(clientNameParam).replace(/-/g, ' ').trim();
+                const decodedName = clientNameParam.replace(/-/g, ' ').trim();
                 const found = clients.find(c => c.name.trim().toLowerCase() === decodedName.toLowerCase());
                 if (found) {
                     setSection(found.app || 'ibo');
@@ -1080,10 +1104,19 @@
             if (!encoded) return;
 
             try {
-                let b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
-                while (b64.length % 4) b64 += '=';
-                const jsonStr = decodeURIComponent(escape(atob(b64)));
-                const shared = JSON.parse(jsonStr);
+                const raw = decodePayloadUTF8(encoded);
+                // دعم الصيغة المختصرة الجديدة والصيغة السابقة معاً
+                const shared = {
+                    app: raw.a || raw.app || 'ibo',
+                    name: raw.n || raw.name,
+                    mac: raw.m || raw.mac,
+                    key: raw.k || raw.key,
+                    subNum: raw.u !== undefined ? raw.u : (raw.subNum || ''),
+                    subPass: raw.p !== undefined ? raw.p : (raw.subPass || ''),
+                    hosts: Array.isArray(raw.h)
+                        ? raw.h.map(item => Array.isArray(item) ? { label: item[0], url: item[1] } : item)
+                        : (raw.hosts || [])
+                };
 
                 if (shared && shared.name && shared.mac && shared.key) {
                     const appType = shared.app === 'shamel' ? 'shamel' : 'ibo';
