@@ -119,16 +119,21 @@
     </div>
 
     <!-- =========================================================
-         لوحة الإدارة الكاملة
+         لوحة الإدارة الكاملة (تظهر للمدير فقط عند فتح الرابط الرئيسي)
          ========================================================= -->
     <div id="adminViewContainer">
+        <!-- الهيدر -->
         <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-20">
-            <div class="max-w-3xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-2.5">
-                    <h1 class="text-lg sm:text-xl font-extrabold">مدير عملاء IPTV</h1>
+            <div class="max-w-3xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <h1 class="text-base sm:text-lg font-extrabold">مدير عملاء IPTV</h1>
                     <span id="cloudStatus" class="text-[11px] bg-indigo-800/80 text-indigo-100 px-2.5 py-0.5 rounded-full font-bold">
                         جاري الربط...
                     </span>
+                    <button type="button" onclick="forceSyncNow()"
+                        class="text-[11px] bg-white/15 hover:bg-white/25 text-white px-2.5 py-0.5 rounded-full font-bold transition">
+                        🔄 مزامنة الآن
+                    </button>
                 </div>
                 <div class="flex items-center gap-2">
                     <a href="https://iboplayer.com/device/login" target="_blank" rel="noopener noreferrer"
@@ -141,6 +146,8 @@
                     </a>
                 </div>
             </div>
+            <!-- شريط تشخيص الخطأ إن وجد -->
+            <div id="errorBanner" class="hidden bg-rose-600 text-white text-xs font-bold px-4 py-2 text-center"></div>
         </header>
 
         <main class="max-w-3xl mx-auto px-4 pt-5 space-y-5">
@@ -174,7 +181,7 @@
                 <div id="hostsListContainer" class="space-y-1.5"></div>
             </section>
 
-            <!-- قسم النسخ الاحتياطي + الرقم السري -->
+            <!-- قسم النسخ الاحتياطي + الرقم السري الخاص -->
             <section class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200/80 space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
@@ -229,7 +236,7 @@
                 </div>
                 <form id="clientForm" onsubmit="saveClient(event)" class="space-y-4">
                     <input type="hidden" id="editIdInput" value="">
-
+                    
                     <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100 space-y-3">
                         <div class="text-xs font-extrabold text-indigo-800 flex items-center gap-1.5">
                             <span>📱 بيانات العميل (التطبيق)</span>
@@ -291,11 +298,11 @@
                 </form>
             </section>
 
-            <!-- البحث والأقسام -->
+            <!-- مربع البحث وأقسام العرض المنفصلة -->
             <div class="space-y-3">
                 <input type="text" id="searchInput" oninput="renderList()" placeholder="🔍 ابحث بالاسم أو الماك..."
                     class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 focus:border-indigo-500 outline-none text-sm shadow-sm">
-
+                
                 <div class="grid grid-cols-2 gap-2.5 bg-slate-200/70 p-1.5 rounded-2xl">
                     <button type="button" onclick="setSection('ibo')" id="tab-ibo"
                         class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-2">
@@ -327,6 +334,7 @@
         </main>
     </div>
 
+    <!-- إشعار النسخ -->
     <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-lg opacity-0 pointer-events-none transition-opacity duration-200 z-50">
         تم النسخ!
     </div>
@@ -334,7 +342,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const defaultFirebaseConfig = {
             apiKey: "AIzaSyCIDNuiKnNw0YzKmoRZQ67pafsThEUxw1E",
@@ -358,23 +366,29 @@
         const HOSTS_LIST_KEY = 'ibo_daily_hosts_list_v1';
         const PERSONAL_PIN_KEY = 'ibo_personal_lock_pin_v1';
 
-        let clients = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        let personalPin = localStorage.getItem(PERSONAL_PIN_KEY) || '';
-        if (!clients.some(c => c.mac && c.mac.toUpperCase() === '00:C3:F4:90:91:5B')) {
-            clients.unshift({
-                id: 'local_preset_00C3',
-                app: 'ibo',
-                name: 'عميل (00:C3)',
-                mac: '00:C3:F4:90:91:5B',
-                key: '123456',
-                createdAt: Date.now()
-            });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+        function safeGetStorage(key, fallback) {
+            try {
+                const v = localStorage.getItem(key);
+                return v !== null ? v : fallback;
+            } catch (e) {
+                return fallback;
+            }
         }
 
-        let dailyHosts = JSON.parse(localStorage.getItem(HOSTS_LIST_KEY) || 'null');
+        function safeSetStorage(key, value) {
+            try {
+                localStorage.setItem(key, value);
+            } catch (e) {
+                console.warn('Storage blocked:', e);
+            }
+        }
+
+        let clients = JSON.parse(safeGetStorage(STORAGE_KEY, '[]'));
+        let personalPin = safeGetStorage(PERSONAL_PIN_KEY, '');
+
+        let dailyHosts = JSON.parse(safeGetStorage(HOSTS_LIST_KEY, 'null'));
         if (!Array.isArray(dailyHosts)) {
-            const legacyHost = localStorage.getItem(HOST_STORAGE_KEY);
+            const legacyHost = safeGetStorage(HOST_STORAGE_KEY, '');
             dailyHosts = legacyHost ? [{ id: 'h_' + Date.now(), label: 'هوست 1', url: legacyHost }] : [];
         }
 
@@ -408,16 +422,28 @@
         }
 
         function saveLocalBackup() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+            safeSetStorage(STORAGE_KEY, JSON.stringify(clients));
         }
 
         function saveLocalHosts() {
-            localStorage.setItem(HOSTS_LIST_KEY, JSON.stringify(dailyHosts));
-            localStorage.setItem(HOST_STORAGE_KEY, dailyHosts[0]?.url || '');
+            safeSetStorage(HOSTS_LIST_KEY, JSON.stringify(dailyHosts));
+            safeSetStorage(HOST_STORAGE_KEY, dailyHosts[0]?.url || '');
         }
 
         function saveLocalPersonalPin() {
-            localStorage.setItem(PERSONAL_PIN_KEY, personalPin);
+            safeSetStorage(PERSONAL_PIN_KEY, personalPin);
+        }
+
+        function showErrorBanner(msg) {
+            const banner = document.getElementById('errorBanner');
+            if (!banner) return;
+            if (!msg) {
+                banner.classList.add('hidden');
+                banner.textContent = '';
+            } else {
+                banner.classList.remove('hidden');
+                banner.textContent = 'تنبيه الربط: ' + msg;
+            }
         }
 
         function updateStatusBadge(text, isSuccess) {
@@ -426,33 +452,28 @@
             el.textContent = text;
             el.className = isSuccess
                 ? 'text-[11px] bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 px-2.5 py-0.5 rounded-full font-bold'
-                : 'text-[11px] bg-amber-500/20 text-amber-200 border border-amber-400/30 px-2.5 py-0.5 rounded-full font-bold';
+                : 'text-[11px] bg-rose-500/30 text-amber-100 border border-rose-300/40 px-2.5 py-0.5 rounded-full font-bold';
         }
 
-        async function syncSettingsToCloud(extraFields = {}) {
-            if (!cloudReady || !currentUser) return false;
+        async function syncHostsToCloud() {
+            if (!currentUser) return;
             try {
                 await setDoc(getSettingsDoc(), {
                     dailyHosts: dailyHosts,
                     dailyHost: dailyHosts[0]?.url || '',
-                    personalPin: personalPin,
-                    updatedAt: Date.now(),
-                    ...extraFields
+                    updatedAt: Date.now()
                 }, { merge: true });
-                return true;
+                showErrorBanner('');
             } catch (err) {
-                console.error("Settings sync error:", err);
-                showToast('تعذر الحفظ السحابي: تحقق من صلاحيات Firestore');
-                return false;
+                console.error("Hosts sync error:", err);
+                showErrorBanner('فشل حفظ الهوست في السحابة (' + (err.code || err.message) + ')');
             }
         }
 
         function renderHostsManager() {
             const container = document.getElementById('hostsListContainer');
             const badge = document.getElementById('hostsCountBadge');
-            if (badge) {
-                badge.textContent = `${dailyHosts.length} هوست`;
-            }
+            if (badge) badge.textContent = `${dailyHosts.length} هوست`;
             if (!container) return;
 
             if (dailyHosts.length === 0) {
@@ -501,8 +522,8 @@
             saveLocalHosts();
             renderHostsManager();
             renderList();
-            const synced = await syncSettingsToCloud();
-            showToast(synced ? 'تمت إضافة الهوست وحفظه في السحابة' : 'أُضيف محلياً (فشل الحفظ السحابي)');
+            showToast('تمت إضافة الهوست بنجاح');
+            await syncHostsToCloud();
         };
 
         function renderPersonalPinUI() {
@@ -525,11 +546,19 @@
             saveLocalPersonalPin();
             renderPersonalPinUI();
             renderList();
-            const synced = await syncSettingsToCloud();
-            if (!personalPin) {
-                showToast('تم مسح الرقم السري');
-            } else {
-                showToast(synced ? 'تم حفظ الرقم السري في السحابة' : 'حُفظ محلياً (فشل الحفظ السحابي)');
+            showToast(personalPin ? 'تم حفظ الرقم السري الخاص بك' : 'تم مسح الرقم السري');
+
+            if (currentUser) {
+                try {
+                    await setDoc(getSettingsDoc(), {
+                        personalPin: personalPin,
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                    showErrorBanner('');
+                } catch (err) {
+                    console.error("PIN sync error:", err);
+                    showErrorBanner('فشل حفظ الرقم السري في السحابة (' + (err.code || err.message) + ')');
+                }
             }
         };
 
@@ -546,7 +575,6 @@
                 saveLocalPersonalPin();
                 renderPersonalPinUI();
                 renderList();
-                syncSettingsToCloud();
             }
             copyText(pinToCopy, 'تم نسخ الرقم السري الخاص بك');
         };
@@ -556,16 +584,64 @@
             saveLocalHosts();
             renderHostsManager();
             renderList();
-            const synced = await syncSettingsToCloud();
-            showToast(synced ? 'تم حذف الهوست من السحابة' : 'تم الحذف محلياً');
+            showToast('تم حذف الهوست');
+            await syncHostsToCloud();
+        };
+
+        // مزامنة يدوية فورية لرفع المحلي وجلب السحابي
+        window.forceSyncNow = async function() {
+            showToast('جاري المزامنة مع السحابة...');
+            try {
+                if (!currentUser) {
+                    const cred = await signInAnonymously(auth);
+                    currentUser = cred.user;
+                }
+                const snap = await getDocs(getClientsCol());
+                const cloudDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                // رفع أي عميل محلي غير موجود في السحابة
+                let uploaded = 0;
+                for (const localItem of clients) {
+                    const existsInCloud = cloudDocs.some(c =>
+                        (c.app || 'ibo') === (localItem.app || 'ibo') &&
+                        (c.mac || '').toUpperCase() === (localItem.mac || '').toUpperCase()
+                    );
+                    if (!existsInCloud && localItem.mac) {
+                        await addDoc(getClientsCol(), {
+                            app: localItem.app || 'ibo',
+                            name: localItem.name,
+                            mac: localItem.mac,
+                            key: localItem.key,
+                            subNum: localItem.subNum || '',
+                            subPass: localItem.subPass || '',
+                            createdAt: Number(localItem.createdAt) || Date.now()
+                        });
+                        uploaded++;
+                    }
+                }
+
+                await syncHostsToCloud();
+                if (personalPin) {
+                    await setDoc(getSettingsDoc(), { personalPin }, { merge: true });
+                }
+
+                cloudReady = true;
+                updateStatusBadge('متصل بالسحابة ●', true);
+                showErrorBanner('');
+                showToast(`اكتملت المزامنة (تم رفع ${uploaded} عميل)`);
+            } catch (err) {
+                console.error('Manual sync failed:', err);
+                const code = err.code || err.message || 'خطأ غير معروف';
+                updateStatusBadge('فشل الربط: ' + code, false);
+                showErrorBanner('سبب الفشل: ' + code + ' — تأكد من تفعيل Anonymous Auth ونشر Rules في Firestore');
+                showToast('فشلت المزامنة: ' + code);
+            }
         };
 
         async function initCloudSync() {
             renderPersonalPinUI();
             renderHostsManager();
             renderList();
-            updateStatusBadge('جاري تسجيل الدخول...', false);
-
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     const cred = await signInWithCustomToken(auth, __initial_auth_token);
@@ -594,8 +670,11 @@
                             renderHostsManager();
                             renderList();
                         }
-                    } else if (cloudReady && (dailyHosts.length > 0 || personalPin)) {
-                        syncSettingsToCloud();
+                    } else if (dailyHosts.length > 0 || personalPin) {
+                        syncHostsToCloud();
+                        if (personalPin) {
+                            setDoc(getSettingsDoc(), { personalPin }, { merge: true });
+                        }
                     }
                 }, (err) => {
                     console.error("Settings snapshot error:", err);
@@ -604,45 +683,47 @@
                 onSnapshot(getClientsCol(), async (snapshot) => {
                     cloudReady = true;
                     updateStatusBadge('متصل بالسحابة ●', true);
+                    showErrorBanner('');
 
                     const cloudList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
                     if (cloudList.length === 0 && clients.length > 0) {
                         for (const item of clients) {
-                            try {
-                                await addDoc(getClientsCol(), {
-                                    app: item.app || 'ibo',
-                                    name: item.name,
-                                    mac: item.mac,
-                                    key: item.key,
-                                    subNum: item.subNum || '',
-                                    subPass: item.subPass || '',
-                                    createdAt: Number(item.createdAt) || Date.now()
-                                });
-                            } catch (e) {
-                                console.error("Initial seed error:", e);
-                            }
+                            await addDoc(getClientsCol(), {
+                                app: item.app || 'ibo',
+                                name: item.name,
+                                mac: item.mac,
+                                key: item.key,
+                                subNum: item.subNum || '',
+                                subPass: item.subPass || '',
+                                createdAt: Number(item.createdAt) || Date.now()
+                            });
                         }
                         return;
                     }
 
-                    clients = cloudList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    // دمج أي عنصر محلي لم يُرفع بعد
+                    const localUnsynced = clients.filter(loc =>
+                        String(loc.id).startsWith('local_') &&
+                        !cloudList.some(cld => (cld.mac || '').toUpperCase() === (loc.mac || '').toUpperCase())
+                    );
+
+                    clients = [...localUnsynced, ...cloudList].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
                     saveLocalBackup();
                     renderList();
                 }, (error) => {
                     console.error("Cloud sync error:", error);
                     cloudReady = false;
-                    updateStatusBadge('حفظ محلي (راجع قواعد Firestore)', false);
+                    const code = error.code || error.message;
+                    updateStatusBadge('خطأ Firestore: ' + code, false);
+                    showErrorBanner('خطأ في قاعدة البيانات (' + code + ') — افتح Firestore -> Rules واضغط Publish');
                 });
             } catch (err) {
                 console.error("Auth error:", err);
                 cloudReady = false;
-                const code = err?.code || '';
-                if (code === 'auth/admin-restricted-operation' || code === 'auth/operation-not-allowed') {
-                    updateStatusBadge('حفظ محلي (فعّل Anonymous Auth)', false);
-                } else {
-                    updateStatusBadge('حفظ محلي (تعذر الاتصال بالسحابة)', false);
-                }
+                const code = err.code || err.message;
+                updateStatusBadge('خطأ الدخول: ' + code, false);
+                showErrorBanner('خطأ في المصادقة (' + code + ') — فعّل Anonymous من Authentication -> Sign-in method');
             }
         }
 
@@ -742,21 +823,23 @@
                 setSection(appType);
                 cancelEdit();
 
-                if (cloudReady && currentUser) {
+                if (currentUser && !String(editId).startsWith('local_')) {
                     try {
                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', String(editId)), {
                             app: appType, name, mac, key, subNum, subPass
                         });
-                        showToast('تم حفظ التعديلات في السحابة');
+                        showToast('✓ تم التعديل في السحابة والجهاز');
                     } catch (err) {
                         console.error("Cloud update error:", err);
-                        showToast('حُفظ محلياً (فشل التحديث السحابي)');
+                        showErrorBanner('فشل التحديث السحابي: ' + (err.code || err.message));
+                        showToast('حُفظ التعديل محلياً فقط');
                     }
                 } else {
-                    showToast('حُفظ محلياً (غير متصل بالسحابة)');
+                    showToast('تم حفظ التعديلات محلياً');
                 }
             } else {
                 const tempId = 'local_' + Date.now();
+                const createdAt = Date.now();
                 const newItem = {
                     id: tempId,
                     app: appType,
@@ -765,7 +848,7 @@
                     key,
                     subNum,
                     subPass,
-                    createdAt: Date.now()
+                    createdAt
                 };
 
                 clients.unshift(newItem);
@@ -773,24 +856,35 @@
                 setSection(appType);
                 cancelEdit();
 
-                if (cloudReady && currentUser) {
-                    try {
-                        await addDoc(getClientsCol(), {
-                            app: appType,
-                            name,
-                            mac,
-                            key,
-                            subNum,
-                            subPass,
-                            createdAt: newItem.createdAt
-                        });
-                        showToast('تم حفظ العميل في السحابة بنجاح');
-                    } catch (err) {
-                        console.error("Cloud add error:", err);
-                        showToast('حُفظ محلياً فقط (تحقق من صلاحيات Firestore)');
+                try {
+                    if (!currentUser) {
+                        const cred = await signInAnonymously(auth);
+                        currentUser = cred.user;
                     }
-                } else {
-                    showToast('حُفظ محلياً فقط (غير متصل بالسحابة)');
+                    const docRef = await addDoc(getClientsCol(), {
+                        app: appType,
+                        name,
+                        mac,
+                        key,
+                        subNum,
+                        subPass,
+                        createdAt
+                    });
+                    // تحديث المعرف المحلي بمعرف السحابة
+                    const localIdx = clients.findIndex(c => c.id === tempId);
+                    if (localIdx !== -1) {
+                        clients[localIdx].id = docRef.id;
+                        saveLocalBackup();
+                    }
+                    cloudReady = true;
+                    updateStatusBadge('متصل بالسحابة ●', true);
+                    showErrorBanner('');
+                    showToast('✓ تم الحفظ في السحابة والجهاز بنجاح');
+                } catch (err) {
+                    console.error("Cloud add error:", err);
+                    const code = err.code || err.message;
+                    showErrorBanner('فشل الحفظ السحابي (' + code + ') — حُفظ في هذا الجهاز فقط');
+                    showToast('حُفظ في الجهاز فقط! سبب فشل السحابة: ' + code);
                 }
             }
         };
@@ -799,17 +893,15 @@
             clients = clients.filter(c => String(c.id) !== String(id));
             saveLocalBackup();
             renderList();
+            showToast('تم حذف العميل');
 
-            if (cloudReady && currentUser && !String(id).startsWith('local_')) {
+            if (currentUser && !String(id).startsWith('local_')) {
                 try {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', String(id)));
-                    showToast('تم حذف العميل من السحابة');
                 } catch (err) {
                     console.error("Cloud delete error:", err);
-                    showToast('حُذف محلياً (فشل الحذف السحابي)');
+                    showErrorBanner('فشل الحذف من السحابة: ' + (err.code || err.message));
                 }
-            } else {
-                showToast('تم حذف العميل');
             }
         };
 
@@ -831,7 +923,7 @@
             t.textContent = msg;
             t.classList.remove('opacity-0');
             clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => t.classList.add('opacity-0'), 2500);
+            toastTimer = setTimeout(() => t.classList.add('opacity-0'), 3000);
         }
 
         window.renderList = function() {
@@ -877,6 +969,7 @@
                     : '<div class="text-[11px] text-amber-800/70 px-1">لا يوجد هوست مضاف بالأعلى حالياً</div>';
 
                 const hasSubDetails = c.subNum || c.subPass;
+                const isLocalOnly = String(c.id).startsWith('local_');
 
                 return `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col gap-3">
@@ -886,6 +979,7 @@
                             <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-lg border ${appInfo.badgeClass}">
                                 ${appInfo.label}
                             </span>
+                            ${isLocalOnly ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800">محلي</span>' : ''}
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5">
                             <button type="button" onclick="shareClientLink('${c.id}')"
@@ -937,7 +1031,9 @@
 
                     <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200/80 space-y-2">
                         <span class="text-[11px] font-extrabold text-amber-900 block">🔑 بيانات الاشتراك</span>
+                        
                         ${hostsHtml}
+
                         ${hasSubDetails ? `
                         <div class="grid grid-cols-1 ${c.subNum && c.subPass ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} gap-2 pt-0.5">
                             ${c.subNum ? `
@@ -1026,12 +1122,13 @@
                         return;
                     }
 
-                    let settingsChanged = false;
                     if (typeof parsed.personalPin === 'string' && parsed.personalPin.trim() !== '') {
                         personalPin = parsed.personalPin.trim();
                         saveLocalPersonalPin();
                         renderPersonalPinUI();
-                        settingsChanged = true;
+                        if (currentUser) {
+                            await setDoc(getSettingsDoc(), { personalPin, updatedAt: Date.now() }, { merge: true });
+                        }
                     }
 
                     if (Array.isArray(parsed.dailyHosts) && parsed.dailyHosts.length > 0) {
@@ -1044,27 +1141,11 @@
                                     label: h.label || `هوست ${dailyHosts.length + 1}`,
                                     url: String(h.url).trim()
                                 });
-                                settingsChanged = true;
                             }
                         }
                         saveLocalHosts();
                         renderHostsManager();
-                    } else if (parsed.dailyHost !== undefined && parsed.dailyHost !== '') {
-                        const urlTrimmed = String(parsed.dailyHost).trim();
-                        if (!dailyHosts.some(existing => existing.url === urlTrimmed)) {
-                            dailyHosts.push({
-                                id: 'h_' + Date.now(),
-                                label: `هوست ${dailyHosts.length + 1}`,
-                                url: urlTrimmed
-                            });
-                            saveLocalHosts();
-                            renderHostsManager();
-                            settingsChanged = true;
-                        }
-                    }
-
-                    if (settingsChanged) {
-                        await syncSettingsToCloud();
+                        await syncHostsToCloud();
                     }
 
                     let addedCount = 0;
@@ -1096,16 +1177,18 @@
                             clients.unshift(newClient);
                             addedCount++;
 
-                            if (cloudReady && currentUser) {
-                                await addDoc(getClientsCol(), {
-                                    app: appType,
-                                    name: nameClean,
-                                    mac: macClean,
-                                    key: keyClean,
-                                    subNum: subNumClean,
-                                    subPass: subPassClean,
-                                    createdAt: newClient.createdAt
-                                });
+                            if (currentUser) {
+                                try {
+                                    await addDoc(getClientsCol(), {
+                                        app: appType,
+                                        name: nameClean,
+                                        mac: macClean,
+                                        key: keyClean,
+                                        subNum: subNumClean,
+                                        subPass: subPassClean,
+                                        createdAt: newClient.createdAt
+                                    });
+                                } catch (err) {}
                             }
                         }
                     }
@@ -1173,12 +1256,8 @@
 
             if (navigator.share) {
                 try {
-                    await navigator.share({
-                        url: shareUrl
-                    });
-                } catch (err) {
-                    // تم إلغاء نافذة المشاركة
-                }
+                    await navigator.share({ url: shareUrl });
+                } catch (err) {}
             }
         };
 
