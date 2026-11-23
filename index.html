@@ -69,6 +69,27 @@
             </form>
         </section>
 
+        <!-- قسم النسخ الاحتياطي (تصدير واستيراد كامل) -->
+        <section class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="text-base">💾</span>
+                <div>
+                    <h2 class="text-xs sm:text-sm font-extrabold text-slate-700">النسخ الاحتياطي الكامل</h2>
+                    <p class="text-[11px] text-slate-400">حفظ أو استعادة جميع العملاء (IBO و Shamel) مع هوست اليوم</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <button type="button" onclick="exportBackup()"
+                    class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <span>⬇ تصدير نسخة</span>
+                </button>
+                <label class="flex-1 sm:flex-none bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5">
+                    <span>⬆ استيراد نسخة</span>
+                    <input type="file" id="importFileInput" accept=".json" onchange="importBackup(event)" class="hidden">
+                </label>
+            </div>
+        </section>
+
         <!-- نموذج إضافة / تعديل عميل -->
         <section class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80">
             <div class="flex items-center justify-between mb-3">
@@ -602,6 +623,117 @@
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[m]));
         }
+
+        // تصدير نسخة احتياطية كاملة بصيغة JSON
+        window.exportBackup = function() {
+            const backupData = {
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                dailyHost: dailyHost,
+                clients: clients.map(c => ({
+                    app: c.app || 'ibo',
+                    name: c.name,
+                    mac: c.mac,
+                    key: c.key,
+                    createdAt: Number(c.createdAt) || Date.now()
+                }))
+            };
+
+            const jsonStr = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `iptv-backup-${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`تم تصدير النسخة الاحتياطية (${clients.length} عميل)`);
+        };
+
+        // استيراد نسخة احتياطية ودمجها بدون تكرار
+        window.importBackup = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    const importedClients = Array.isArray(parsed) ? parsed : (parsed.clients || []);
+
+                    if (!Array.isArray(importedClients)) {
+                        showToast('صيغة الملف غير صالحة!');
+                        return;
+                    }
+
+                    // استعادة هوست اليوم إذا كان موجوداً في الملف
+                    if (parsed.dailyHost !== undefined && parsed.dailyHost !== '') {
+                        dailyHost = String(parsed.dailyHost).trim();
+                        localStorage.setItem(HOST_STORAGE_KEY, dailyHost);
+                        document.getElementById('dailyHostInput').value = dailyHost;
+
+                        if (cloudReady && currentUser) {
+                            await setDoc(getSettingsDoc(), {
+                                host: dailyHost,
+                                updatedAt: Date.now()
+                            }, { merge: true });
+                        }
+                    }
+
+                    // إضافة العملاء الجدد مع تجنب تكرار نفس الماك والتطبيق
+                    let addedCount = 0;
+                    for (const item of importedClients) {
+                        if (!item.name || !item.mac || !item.key) continue;
+                        const appType = item.app === 'shamel' ? 'shamel' : 'ibo';
+                        const macClean = String(item.mac).trim().toUpperCase();
+                        const nameClean = String(item.name).trim();
+                        const keyClean = String(item.key).trim();
+
+                        const exists = clients.some(c =>
+                            (c.app || 'ibo') === appType &&
+                            c.mac.toUpperCase() === macClean
+                        );
+
+                        if (!exists) {
+                            const newClient = {
+                                id: 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                                app: appType,
+                                name: nameClean,
+                                mac: macClean,
+                                key: keyClean,
+                                createdAt: Number(item.createdAt) || Date.now()
+                            };
+                            clients.unshift(newClient);
+                            addedCount++;
+
+                            if (cloudReady && currentUser) {
+                                await addDoc(getClientsCol(), {
+                                    app: appType,
+                                    name: nameClean,
+                                    mac: macClean,
+                                    key: keyClean,
+                                    createdAt: newClient.createdAt
+                                });
+                            }
+                        }
+                    }
+
+                    saveLocalBackup();
+                    renderList();
+                    showToast(`تم الاستيراد بنجاح (أُضيف ${addedCount} عميل جديد)`);
+                } catch (err) {
+                    console.error('Import error:', err);
+                    showToast('حدث خطأ أثناء قراءة ملف النسخة الاحتياطية');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        };
 
         initCloudSync();
     </script>
