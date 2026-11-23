@@ -116,6 +116,7 @@
                     <label class="block text-xs font-bold text-slate-600 mb-1">الماك أدريس (MAC)</label>
                     <input type="text" id="macInput" required maxlength="17" dir="ltr" placeholder="00:1A:79:XX:XX:XX"
                         oninput="formatMac(this)"
+                        style="direction: ltr; unicode-bidi: isolate;"
                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm mono uppercase text-left bg-slate-50">
                 </div>
                 <div>
@@ -204,16 +205,27 @@
         const HOSTS_LIST_KEY = 'ibo_daily_hosts_list_v1';
 
         let clients = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        let dailyHosts = JSON.parse(localStorage.getItem(HOSTS_LIST_KEY) || 'null');
-
-        // ترحيل الهوست القديم تلقائياً إلى مصفوفة الهوستات المتعددة إذا وُجد
-        if (!Array.isArray(dailyHosts)) {
-            const legacyHost = localStorage.getItem(HOST_STORAGE_KEY) || '';
-            dailyHosts = legacyHost ? [{ id: 'h_' + Date.now(), label: 'هوست 1', url: legacyHost }] : [];
-            localStorage.setItem(HOSTS_LIST_KEY, JSON.stringify(dailyHosts));
+        
+        // إضافة الماك المطلوب 00:C3:F4:90:91:5B إذا لم يكن موجوداً مسبقاً
+        if (!clients.some(c => c.mac && c.mac.toUpperCase() === '00:C3:F4:90:91:5B')) {
+            clients.unshift({
+                id: 'local_preset_00C3',
+                app: 'ibo',
+                name: 'عميل (00:C3)',
+                mac: '00:C3:F4:90:91:5B',
+                key: '123456',
+                createdAt: Date.now()
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
         }
 
-        let currentSection = 'ibo'; // القسم الافتراضي هو IBO ويفصل Shamel.tv لحاله
+        let dailyHosts = JSON.parse(localStorage.getItem(HOSTS_LIST_KEY) || 'null');
+        if (!Array.isArray(dailyHosts)) {
+            const legacyHost = localStorage.getItem(HOST_STORAGE_KEY);
+            dailyHosts = legacyHost ? [{ id: 'h_' + Date.now(), label: 'هوست 1', url: legacyHost }] : [];
+        }
+
+        let currentSection = 'ibo';
         let currentUser = null;
         let cloudReady = false;
 
@@ -223,20 +235,14 @@
                 url: 'https://iboplayer.com/device/login',
                 btnText: 'نسخ الماك وفتح IBO ↗',
                 badgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
-                btnClass: 'bg-amber-400 hover:bg-amber-300 text-slate-900',
-                sectionTitle: 'عملاء قسم IBO Player فقط',
-                sectionSub: 'معزول عن عملاء Shamel.tv',
-                dotColor: 'bg-amber-400'
+                btnClass: 'bg-amber-400 hover:bg-amber-300 text-slate-900'
             },
             shamel: {
                 label: 'Shamel TV',
                 url: 'http://shamel.tv/',
                 btnText: 'نسخ الماك وفتح Shamel ↗',
                 badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                btnClass: 'bg-emerald-400 hover:bg-emerald-300 text-slate-900',
-                sectionTitle: 'عملاء قسم Shamel.tv فقط',
-                sectionSub: 'معزول عن عملاء IBO Player',
-                dotColor: 'bg-emerald-500'
+                btnClass: 'bg-emerald-400 hover:bg-emerald-300 text-slate-900'
             }
         };
 
@@ -245,7 +251,7 @@
         }
 
         function getSettingsDoc() {
-            return doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'daily_host');
+            return doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general');
         }
 
         function saveLocalBackup() {
@@ -254,37 +260,7 @@
 
         function saveLocalHosts() {
             localStorage.setItem(HOSTS_LIST_KEY, JSON.stringify(dailyHosts));
-        }
-
-        function renderHostsManager() {
-            const listEl = document.getElementById('hostsManagerList');
-            if (!listEl) return;
-
-            if (dailyHosts.length === 0) {
-                listEl.innerHTML = `<p class="text-xs text-indigo-200/70">لا توجد هوستات مضافة حالياً. أضف أول هوست من الأعلى.</p>`;
-                return;
-            }
-
-            listEl.innerHTML = dailyHosts.map((h, idx) => `
-                <div class="bg-white/10 border border-white/15 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
-                    <div class="overflow-hidden flex items-center gap-2">
-                        <span class="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[11px] font-bold px-2 py-0.5 rounded-lg shrink-0">
-                            ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}
-                        </span>
-                        <code class="text-xs sm:text-sm text-white mono truncate" dir="ltr">${escapeHtml(h.url)}</code>
-                    </div>
-                    <div class="flex items-center gap-1.5 shrink-0">
-                        <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
-                            class="bg-white/15 hover:bg-white/25 text-white font-bold px-2.5 py-1 rounded-lg text-xs transition">
-                            نسخ
-                        </button>
-                        <button type="button" onclick="deleteDailyHost('${h.id}')"
-                            class="bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 font-bold px-2.5 py-1 rounded-lg text-xs transition">
-                            حذف
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+            localStorage.setItem(HOST_STORAGE_KEY, dailyHosts[0]?.url || '');
         }
 
         function updateStatusBadge(text, isSuccess) {
@@ -295,6 +271,85 @@
                 ? 'text-[11px] bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 px-2.5 py-0.5 rounded-full font-bold'
                 : 'text-[11px] bg-amber-500/20 text-amber-200 border border-amber-400/30 px-2.5 py-0.5 rounded-full font-bold';
         }
+
+        async function syncHostsToCloud() {
+            if (!cloudReady || !currentUser) return;
+            try {
+                await setDoc(getSettingsDoc(), {
+                    dailyHosts: dailyHosts,
+                    dailyHost: dailyHosts[0]?.url || '',
+                    updatedAt: Date.now()
+                }, { merge: true });
+            } catch (err) {
+                console.error("Host sync error:", err);
+            }
+        }
+
+        function renderHostsManager() {
+            const container = document.getElementById('hostsManagerList');
+            const badge = document.getElementById('hostSavedBadge');
+            if (!container) return;
+
+            if (dailyHosts.length === 0) {
+                if (badge) badge.textContent = 'لا يوجد هوست محفوظ';
+                container.innerHTML = `<div class="text-xs text-indigo-200/70 bg-white/5 px-3 py-2 rounded-xl border border-white/10">أضف هوست اليوم بالأعلى ليظهر تلقائياً داخل بطاقة كل عميل</div>`;
+                return;
+            }
+
+            if (badge) badge.textContent = `${dailyHosts.length} هوست مفعّل ●`;
+            container.innerHTML = dailyHosts.map((h, idx) => `
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-white/10 px-3 py-2 rounded-xl border border-white/15">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <span class="text-[11px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-md font-bold shrink-0">
+                            ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}
+                        </span>
+                        <code class="text-xs sm:text-sm text-white mono truncate" dir="ltr">${escapeHtml(h.url)}</code>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
+                            class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-2.5 py-1 rounded-lg text-xs transition">
+                            نسخ
+                        </button>
+                        <button type="button" onclick="deleteDailyHost('${escapeHtml(h.id)}')"
+                            class="bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 font-bold px-2.5 py-1 rounded-lg text-xs transition">
+                            حذف
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.addDailyHost = async function(e) {
+            e.preventDefault();
+            const labelEl = document.getElementById('dailyHostLabelInput');
+            const urlEl = document.getElementById('dailyHostInput');
+            const url = urlEl.value.trim();
+            if (!url) return;
+
+            const label = labelEl.value.trim() || `هوست ${dailyHosts.length + 1}`;
+            dailyHosts.push({
+                id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                label,
+                url
+            });
+
+            labelEl.value = '';
+            urlEl.value = '';
+            saveLocalHosts();
+            renderHostsManager();
+            renderList();
+            showToast('تم إضافة الهوست لكل العملاء');
+            await syncHostsToCloud();
+        };
+
+        window.deleteDailyHost = async function(id) {
+            dailyHosts = dailyHosts.filter(h => String(h.id) !== String(id));
+            saveLocalHosts();
+            renderHostsManager();
+            renderList();
+            showToast('تم حذف الهوست');
+            await syncHostsToCloud();
+        };
 
         async function initCloudSync() {
             renderHostsManager();
@@ -308,28 +363,33 @@
                     currentUser = cred.user;
                 }
 
-                // 1. الاستماع لتحديثات قائمة هوستات اليوم في السحابة
+                // الاستماع لهوستات اليوم من السحابة
                 onSnapshot(getSettingsDoc(), (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        if (Array.isArray(data.hosts)) {
-                            dailyHosts = data.hosts;
-                        } else if (data.host) {
-                            dailyHosts = [{ id: 'h_cloud', label: 'هوست 1', url: data.host }];
+                        if (Array.isArray(data.dailyHosts)) {
+                            dailyHosts = data.dailyHosts;
+                            saveLocalHosts();
+                            renderHostsManager();
+                            renderList();
+                        } else if (data.dailyHost) {
+                            dailyHosts = [{ id: 'h_cloud', label: 'هوست 1', url: data.dailyHost }];
+                            saveLocalHosts();
+                            renderHostsManager();
+                            renderList();
                         }
-                        saveLocalHosts();
-                        renderHostsManager();
-                        renderList();
+                    } else if (dailyHosts.length > 0) {
+                        syncHostsToCloud();
                     }
-                }, (err) => console.error("Host sync error:", err));
+                });
 
-                // 2. الاستماع لتحديثات العملاء في السحابة
+                // الاستماع المباشر لقائمة العملاء
                 onSnapshot(getClientsCol(), async (snapshot) => {
                     cloudReady = true;
                     updateStatusBadge('متصل بالسحابة ●', true);
 
                     const cloudList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                    
+
                     if (cloudList.length === 0 && clients.length > 0) {
                         for (const item of clients) {
                             await addDoc(getClientsCol(), {
@@ -358,91 +418,43 @@
             }
         }
 
-        // إضافة هوست جديد للقائمة ومزامنته
-        window.addDailyHost = async function(e) {
-            e.preventDefault();
-            const urlInput = document.getElementById('dailyHostInput');
-            const labelInput = document.getElementById('dailyHostLabelInput');
-            const urlVal = urlInput.value.trim();
-            if (!urlVal) return;
-
-            const labelVal = labelInput.value.trim() || `هوست ${dailyHosts.length + 1}`;
-            const newHost = {
-                id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-                label: labelVal,
-                url: urlVal
-            };
-
-            dailyHosts.push(newHost);
-            saveLocalHosts();
-            renderHostsManager();
-            renderList();
-
-            urlInput.value = '';
-            labelInput.value = '';
-            showToast('تمت إضافة الهوست وظهوره لجميع العملاء');
-
-            await syncHostsToCloud();
-        };
-
-        // حذف هوست من القائمة ومزامنته
-        window.deleteDailyHost = async function(id) {
-            dailyHosts = dailyHosts.filter(h => String(h.id) !== String(id));
-            saveLocalHosts();
-            renderHostsManager();
-            renderList();
-            showToast('تم حذف الهوست');
-
-            await syncHostsToCloud();
-        };
-
-        async function syncHostsToCloud() {
-            if (cloudReady && currentUser) {
-                try {
-                    await setDoc(getSettingsDoc(), {
-                        hosts: dailyHosts,
-                        host: dailyHosts[0]?.url || '',
-                        updatedAt: Date.now()
-                    }, { merge: true });
-                } catch (err) {
-                    console.error("Error syncing hosts to cloud:", err);
-                }
-            }
-        }
-
-        // التبديل بين قسم IBO وقسم Shamel.tv لحالهم
         window.setSection = function(section) {
             currentSection = section;
-
-            // تحديث القائمة المنسدلة في نموذج الإضافة لتطابق القسم المفتوح تلقائياً
-            if (!document.getElementById('editIdInput').value) {
-                document.getElementById('appInput').value = section;
-            }
-
             const tabIbo = document.getElementById('tab-ibo');
             const tabShamel = document.getElementById('tab-shamel');
+            const titleEl = document.getElementById('activeSectionTitle');
+            const subEl = document.getElementById('activeSectionSubtitle');
+            const appSelect = document.getElementById('appInput');
 
             if (section === 'ibo') {
                 tabIbo.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-2';
                 tabShamel.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 hover:bg-white/60 transition flex items-center justify-center gap-2';
+                titleEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> عملاء قسم IBO Player فقط';
+                subEl.textContent = 'يظهر هنا عملاء IBO فقط';
             } else {
-                tabShamel.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-2';
+                tabShamel.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 text-white shadow-sm transition flex items-center justify-center gap-2';
                 tabIbo.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 hover:bg-white/60 transition flex items-center justify-center gap-2';
+                titleEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> عملاء قسم Shamel.tv فقط';
+                subEl.textContent = 'يظهر هنا عملاء Shamel.tv فقط';
             }
 
-            const info = APP_CONFIG[section];
-            document.getElementById('activeSectionTitle').innerHTML = `
-                <span class="w-2.5 h-2.5 rounded-full ${info.dotColor}"></span>
-                ${info.sectionTitle}
-            `;
-            document.getElementById('activeSectionSubtitle').textContent = info.sectionSub;
-
+            if (appSelect && !document.getElementById('editIdInput').value) {
+                appSelect.value = section;
+            }
             renderList();
         };
 
         window.formatMac = function(el) {
-            let v = el.value.replace(/[^a-fA-F0-9]/g, '').toUpperCase();
-            el.value = (v.match(/.{1,2}/g)?.join(':') || '').substring(0, 17);
+            const start = el.selectionStart;
+            const prevLen = el.value.length;
+            let v = el.value.replace(/[^a-fA-F0-9]/g, '').toUpperCase().substring(0, 12);
+            const formatted = v.match(/.{1,2}/g)?.join(':') || '';
+            el.value = formatted;
+            const diff = formatted.length - prevLen;
+            if (typeof start === 'number') {
+                const newPos = Math.max(0, start + diff);
+                el.setSelectionRange(newPos, newPos);
+            }
         };
 
         window.editClient = function(id) {
@@ -466,10 +478,10 @@
 
         window.cancelEdit = function() {
             document.getElementById('editIdInput').value = '';
+            document.getElementById('appInput').value = currentSection;
             document.getElementById('nameInput').value = '';
             document.getElementById('macInput').value = '';
             document.getElementById('keyInput').value = '';
-            document.getElementById('appInput').value = currentSection;
 
             document.getElementById('formTitle').textContent = 'إضافة عميل جديد';
             document.getElementById('cancelEditBtn').classList.add('hidden');
@@ -492,8 +504,8 @@
                 if (idx !== -1) {
                     clients[idx] = { ...clients[idx], app: appType, name, mac, key };
                     saveLocalBackup();
-                    setSection(appType);
                 }
+                setSection(appType);
                 cancelEdit();
                 showToast('تم حفظ التعديلات');
 
@@ -519,7 +531,7 @@
 
                 clients.unshift(newItem);
                 saveLocalBackup();
-                setSection(appType); // الانتقال تلقائياً لقسم العميل المضاف
+                setSection(appType);
                 cancelEdit();
                 showToast('تم حفظ العميل بنجاح');
 
@@ -581,18 +593,15 @@
             const container = document.getElementById('clientsList');
             const emptyMsg = document.getElementById('emptyMsg');
 
-            // تحديث عدادات كل قسم بشكل مستقل
-            const iboClients = clients.filter(c => (c.app || 'ibo') === 'ibo');
-            const shamelClients = clients.filter(c => c.app === 'shamel');
+            document.getElementById('count-ibo').textContent = clients.filter(c => (c.app || 'ibo') === 'ibo').length;
+            document.getElementById('count-shamel').textContent = clients.filter(c => c.app === 'shamel').length;
 
-            document.getElementById('count-ibo').textContent = iboClients.length;
-            document.getElementById('count-shamel').textContent = shamelClients.length;
-
-            // تصفية العملاء بحيث يظهر عملاء القسم المختار فقط (IBO لحاله و Shamel.tv لحاله)
-            const sectionClients = currentSection === 'ibo' ? iboClients : shamelClients;
-            const filtered = sectionClients.filter(c => 
-                c.name.toLowerCase().includes(q) || c.mac.toLowerCase().includes(q)
-            );
+            const filtered = clients.filter(c => {
+                const clientApp = c.app || 'ibo';
+                const matchesSection = clientApp === currentSection;
+                const matchesSearch = c.name.toLowerCase().includes(q) || c.mac.toLowerCase().includes(q);
+                return matchesSection && matchesSearch;
+            });
 
             if (filtered.length === 0) {
                 container.innerHTML = '';
@@ -603,30 +612,22 @@
             emptyMsg.classList.add('hidden');
             container.innerHTML = filtered.map(c => {
                 const appInfo = APP_CONFIG[c.app || 'ibo'];
-                
-                // بطاقات هوستات اليوم داخل بطاقة كل عميل
-                const hostRowHtml = dailyHosts.length > 0
-                    ? `
-                    <div class="space-y-1.5">
+                const hostsHtml = dailyHosts.length > 0
+                    ? `<div class="space-y-1.5">
                         ${dailyHosts.map((h, idx) => `
-                            <div class="bg-amber-50/90 p-2.5 rounded-xl border border-amber-200/80 flex items-center justify-between gap-2">
+                            <div class="bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/80 flex items-center justify-between gap-2">
                                 <div class="overflow-hidden">
-                                    <span class="text-[11px] text-amber-800 block font-extrabold">${escapeHtml(h.label || ('هوست ' + (idx + 1)))}</span>
-                                    <code class="text-xs sm:text-sm font-bold text-slate-900 mono block truncate" dir="ltr">${escapeHtml(h.url)}</code>
+                                    <span class="text-[11px] text-amber-800 block font-extrabold">🌐 ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}</span>
+                                    <code class="text-xs sm:text-sm font-bold text-slate-800 mono block truncate" dir="ltr">${escapeHtml(h.url)}</code>
                                 </div>
-                                <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ ${escapeHtml(h.label || 'الهوست')}')"
-                                    class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 transition shadow-sm">
+                                <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
+                                    class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 transition">
                                     نسخ الهوست
                                 </button>
                             </div>
                         `).join('')}
-                    </div>
-                    `
-                    : `
-                    <div class="bg-slate-50 px-3 py-2 rounded-xl border border-dashed border-slate-200 flex items-center justify-between text-xs text-slate-400">
-                        <span>لم يتم تحديد هوستات اليوم بعد (أضفها من المربع بالأعلى)</span>
-                    </div>
-                    `;
+                       </div>`
+                    : '';
 
                 return `
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col gap-3">
@@ -654,15 +655,14 @@
                         </div>
                     </div>
 
-                    <!-- هوست اليوم الخاص بالعميل -->
-                    ${hostRowHtml}
+                    ${hostsHtml}
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <!-- صف الماك -->
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 flex items-center justify-between gap-2">
                             <div class="overflow-hidden">
                                 <span class="text-[11px] text-slate-400 block font-bold">MAC</span>
-                                <code class="text-sm font-bold text-indigo-700 mono">${escapeHtml(c.mac)}</code>
+                                <code class="text-sm font-bold text-indigo-700 mono inline-block" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">${escapeHtml(c.mac)}</code>
                             </div>
                             <button type="button" onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك')"
                                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 transition">
