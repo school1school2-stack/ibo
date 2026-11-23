@@ -42,31 +42,30 @@
 
     <main class="max-w-3xl mx-auto px-4 pt-5 space-y-5">
 
-        <!-- قسم هوست اليوم (يظهر ويُنسخ لكل عميل) -->
-        <section class="bg-gradient-to-l from-slate-900 to-indigo-950 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-indigo-800/60">
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+        <!-- قسم هوستات اليوم (يدعم إضافة أكثر من هوست ويظهر تلقائياً لكل عميل) -->
+        <section class="bg-gradient-to-l from-slate-900 to-indigo-950 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-indigo-800/60 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     <span class="text-base">🌐</span>
-                    <h2 class="text-sm sm:text-base font-extrabold text-amber-300">هوست اليوم (يظهر تلقائياً لكل عميل)</h2>
+                    <h2 class="text-sm sm:text-base font-extrabold text-amber-300">هوستات اليوم (تظهر تلقائياً لكل عميل)</h2>
                 </div>
                 <span id="hostSavedBadge" class="text-[11px] text-indigo-200 bg-white/10 px-2.5 py-0.5 rounded-full font-semibold">
                     محدّث تلقائياً
                 </span>
             </div>
-            <form onsubmit="saveDailyHost(event)" class="flex flex-col sm:flex-row gap-2.5">
-                <input type="text" id="dailyHostInput" dir="ltr" placeholder="http://example.com:8080"
-                    class="flex-1 px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 focus:border-amber-400 focus:bg-white/15 text-white placeholder-slate-400 outline-none text-sm mono text-left">
-                <div class="flex items-center gap-2">
-                    <button type="submit"
-                        class="flex-1 sm:flex-none bg-amber-400 hover:bg-amber-300 active:scale-[0.99] text-slate-900 font-extrabold px-5 py-2.5 rounded-xl text-xs sm:text-sm shadow transition">
-                        حفظ الهوست
-                    </button>
-                    <button type="button" onclick="copyCurrentHost()"
-                        class="bg-white/15 hover:bg-white/25 text-white font-bold px-3.5 py-2.5 rounded-xl text-xs sm:text-sm transition">
-                        نسخ
-                    </button>
-                </div>
+            <form onsubmit="addDailyHost(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                <input type="text" id="dailyHostLabelInput" placeholder="اسم الهوست (اختياري: سيرفر 1)"
+                    class="sm:col-span-4 px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 focus:border-amber-400 focus:bg-white/15 text-white placeholder-slate-400 outline-none text-xs sm:text-sm">
+                <input type="text" id="dailyHostInput" required dir="ltr" placeholder="http://example.com:8080"
+                    class="sm:col-span-6 px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 focus:border-amber-400 focus:bg-white/15 text-white placeholder-slate-400 outline-none text-sm mono text-left">
+                <button type="submit"
+                    class="sm:col-span-2 bg-amber-400 hover:bg-amber-300 active:scale-[0.99] text-slate-900 font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow transition">
+                    + إضافة
+                </button>
             </form>
+
+            <!-- قائمة الهوستات المضافة حالياً -->
+            <div id="hostsManagerList" class="space-y-2 pt-1"></div>
         </section>
 
         <!-- قسم النسخ الاحتياطي (تصدير واستيراد كامل) -->
@@ -75,7 +74,7 @@
                 <span class="text-base">💾</span>
                 <div>
                     <h2 class="text-xs sm:text-sm font-extrabold text-slate-700">النسخ الاحتياطي الكامل</h2>
-                    <p class="text-[11px] text-slate-400">حفظ أو استعادة جميع العملاء (IBO و Shamel) مع هوست اليوم</p>
+                    <p class="text-[11px] text-slate-400">حفظ أو استعادة جميع العملاء (IBO و Shamel) مع جميع الهوستات</p>
                 </div>
             </div>
             <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -202,15 +201,21 @@
 
         const STORAGE_KEY = 'ibo_simple_clients_v1';
         const HOST_STORAGE_KEY = 'ibo_daily_host_v1';
+        const HOSTS_LIST_KEY = 'ibo_daily_hosts_list_v1';
 
         let clients = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        let dailyHost = localStorage.getItem(HOST_STORAGE_KEY) || '';
+        let dailyHosts = JSON.parse(localStorage.getItem(HOSTS_LIST_KEY) || 'null');
+
+        // ترحيل الهوست القديم تلقائياً إلى مصفوفة الهوستات المتعددة إذا وُجد
+        if (!Array.isArray(dailyHosts)) {
+            const legacyHost = localStorage.getItem(HOST_STORAGE_KEY) || '';
+            dailyHosts = legacyHost ? [{ id: 'h_' + Date.now(), label: 'هوست 1', url: legacyHost }] : [];
+            localStorage.setItem(HOSTS_LIST_KEY, JSON.stringify(dailyHosts));
+        }
+
         let currentSection = 'ibo'; // القسم الافتراضي هو IBO ويفصل Shamel.tv لحاله
         let currentUser = null;
         let cloudReady = false;
-
-        // تعبئة حقل الهوست عند تحميل الصفحة
-        document.getElementById('dailyHostInput').value = dailyHost;
 
         const APP_CONFIG = {
             ibo: {
@@ -247,6 +252,41 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
         }
 
+        function saveLocalHosts() {
+            localStorage.setItem(HOSTS_LIST_KEY, JSON.stringify(dailyHosts));
+        }
+
+        function renderHostsManager() {
+            const listEl = document.getElementById('hostsManagerList');
+            if (!listEl) return;
+
+            if (dailyHosts.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-indigo-200/70">لا توجد هوستات مضافة حالياً. أضف أول هوست من الأعلى.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = dailyHosts.map((h, idx) => `
+                <div class="bg-white/10 border border-white/15 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+                    <div class="overflow-hidden flex items-center gap-2">
+                        <span class="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[11px] font-bold px-2 py-0.5 rounded-lg shrink-0">
+                            ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}
+                        </span>
+                        <code class="text-xs sm:text-sm text-white mono truncate" dir="ltr">${escapeHtml(h.url)}</code>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
+                            class="bg-white/15 hover:bg-white/25 text-white font-bold px-2.5 py-1 rounded-lg text-xs transition">
+                            نسخ
+                        </button>
+                        <button type="button" onclick="deleteDailyHost('${h.id}')"
+                            class="bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 font-bold px-2.5 py-1 rounded-lg text-xs transition">
+                            حذف
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         function updateStatusBadge(text, isSuccess) {
             const el = document.getElementById('cloudStatus');
             if (!el) return;
@@ -257,6 +297,7 @@
         }
 
         async function initCloudSync() {
+            renderHostsManager();
             renderList();
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -267,16 +308,17 @@
                     currentUser = cred.user;
                 }
 
-                // 1. الاستماع لتحديثات هوست اليوم في السحابة
+                // 1. الاستماع لتحديثات قائمة هوستات اليوم في السحابة
                 onSnapshot(getSettingsDoc(), (docSnap) => {
                     if (docSnap.exists()) {
-                        const cloudHost = docSnap.data().host || '';
-                        dailyHost = cloudHost;
-                        localStorage.setItem(HOST_STORAGE_KEY, dailyHost);
-                        const inputEl = document.getElementById('dailyHostInput');
-                        if (document.activeElement !== inputEl) {
-                            inputEl.value = dailyHost;
+                        const data = docSnap.data();
+                        if (Array.isArray(data.hosts)) {
+                            dailyHosts = data.hosts;
+                        } else if (data.host) {
+                            dailyHosts = [{ id: 'h_cloud', label: 'هوست 1', url: data.host }];
                         }
+                        saveLocalHosts();
+                        renderHostsManager();
                         renderList();
                     }
                 }, (err) => console.error("Host sync error:", err));
@@ -316,35 +358,57 @@
             }
         }
 
-        // حفظ هوست اليوم ومزامنته
-        window.saveDailyHost = async function(e) {
+        // إضافة هوست جديد للقائمة ومزامنته
+        window.addDailyHost = async function(e) {
             e.preventDefault();
-            const val = document.getElementById('dailyHostInput').value.trim();
-            dailyHost = val;
-            localStorage.setItem(HOST_STORAGE_KEY, dailyHost);
-            renderList();
-            showToast(val ? 'تم حفظ هوست اليوم وتحديثه لكل العملاء' : 'تم مسح هوست اليوم');
+            const urlInput = document.getElementById('dailyHostInput');
+            const labelInput = document.getElementById('dailyHostLabelInput');
+            const urlVal = urlInput.value.trim();
+            if (!urlVal) return;
 
+            const labelVal = labelInput.value.trim() || `هوست ${dailyHosts.length + 1}`;
+            const newHost = {
+                id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+                label: labelVal,
+                url: urlVal
+            };
+
+            dailyHosts.push(newHost);
+            saveLocalHosts();
+            renderHostsManager();
+            renderList();
+
+            urlInput.value = '';
+            labelInput.value = '';
+            showToast('تمت إضافة الهوست وظهوره لجميع العملاء');
+
+            await syncHostsToCloud();
+        };
+
+        // حذف هوست من القائمة ومزامنته
+        window.deleteDailyHost = async function(id) {
+            dailyHosts = dailyHosts.filter(h => String(h.id) !== String(id));
+            saveLocalHosts();
+            renderHostsManager();
+            renderList();
+            showToast('تم حذف الهوست');
+
+            await syncHostsToCloud();
+        };
+
+        async function syncHostsToCloud() {
             if (cloudReady && currentUser) {
                 try {
                     await setDoc(getSettingsDoc(), {
-                        host: dailyHost,
+                        hosts: dailyHosts,
+                        host: dailyHosts[0]?.url || '',
                         updatedAt: Date.now()
                     }, { merge: true });
                 } catch (err) {
-                    console.error("Error saving daily host to cloud:", err);
+                    console.error("Error syncing hosts to cloud:", err);
                 }
             }
-        };
-
-        window.copyCurrentHost = function() {
-            const val = document.getElementById('dailyHostInput').value.trim();
-            if (!val) {
-                showToast('لا يوجد هوست محفوظ حالياً');
-                return;
-            }
-            copyText(val, 'تم نسخ هوست اليوم');
-        };
+        }
 
         // التبديل بين قسم IBO وقسم Shamel.tv لحالهم
         window.setSection = function(section) {
@@ -540,23 +604,27 @@
             container.innerHTML = filtered.map(c => {
                 const appInfo = APP_CONFIG[c.app || 'ibo'];
                 
-                // بطاقة هوست اليوم داخل بطاقة كل عميل
-                const hostRowHtml = dailyHost
+                // بطاقات هوستات اليوم داخل بطاقة كل عميل
+                const hostRowHtml = dailyHosts.length > 0
                     ? `
-                    <div class="bg-amber-50/90 p-2.5 rounded-xl border border-amber-200/80 flex items-center justify-between gap-2">
-                        <div class="overflow-hidden">
-                            <span class="text-[11px] text-amber-800 block font-extrabold">هوست اليوم (HOST)</span>
-                            <code class="text-xs sm:text-sm font-bold text-slate-900 mono block truncate" dir="ltr">${escapeHtml(dailyHost)}</code>
-                        </div>
-                        <button type="button" onclick="copyText('${escapeHtml(dailyHost)}', 'تم نسخ هوست اليوم')"
-                            class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 transition shadow-sm">
-                            نسخ الهوست
-                        </button>
+                    <div class="space-y-1.5">
+                        ${dailyHosts.map((h, idx) => `
+                            <div class="bg-amber-50/90 p-2.5 rounded-xl border border-amber-200/80 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden">
+                                    <span class="text-[11px] text-amber-800 block font-extrabold">${escapeHtml(h.label || ('هوست ' + (idx + 1)))}</span>
+                                    <code class="text-xs sm:text-sm font-bold text-slate-900 mono block truncate" dir="ltr">${escapeHtml(h.url)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ ${escapeHtml(h.label || 'الهوست')}')"
+                                    class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 transition shadow-sm">
+                                    نسخ الهوست
+                                </button>
+                            </div>
+                        `).join('')}
                     </div>
                     `
                     : `
                     <div class="bg-slate-50 px-3 py-2 rounded-xl border border-dashed border-slate-200 flex items-center justify-between text-xs text-slate-400">
-                        <span>لم يتم تحديد هوست اليوم بعد (أضفه من المربع بالأعلى)</span>
+                        <span>لم يتم تحديد هوستات اليوم بعد (أضفها من المربع بالأعلى)</span>
                     </div>
                     `;
 
@@ -627,9 +695,10 @@
         // تصدير نسخة احتياطية كاملة بصيغة JSON
         window.exportBackup = function() {
             const backupData = {
-                version: 1,
+                version: 2,
                 exportedAt: new Date().toISOString(),
-                dailyHost: dailyHost,
+                dailyHosts: dailyHosts,
+                dailyHost: dailyHosts[0]?.url || '',
                 clients: clients.map(c => ({
                     app: c.app || 'ibo',
                     name: c.name,
@@ -654,7 +723,7 @@
             showToast(`تم تصدير النسخة الاحتياطية (${clients.length} عميل)`);
         };
 
-        // استيراد نسخة احتياطية ودمجها بدون تكرار
+        // استيراد نسخة احتياطية كاملة بصيغة JSON
         window.importBackup = function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -663,24 +732,40 @@
             reader.onload = async function(e) {
                 try {
                     const parsed = JSON.parse(e.target.result);
-                    const importedClients = Array.isArray(parsed) ? parsed : (parsed.clients || []);
+                    const importedClients = Array.isArray(parsed) ? parsed : parsed.clients;
 
                     if (!Array.isArray(importedClients)) {
-                        showToast('صيغة الملف غير صالحة!');
+                        showToast('صيغة ملف النسخة الاحتياطية غير صحيحة');
                         return;
                     }
 
-                    // استعادة هوست اليوم إذا كان موجوداً في الملف
-                    if (parsed.dailyHost !== undefined && parsed.dailyHost !== '') {
-                        dailyHost = String(parsed.dailyHost).trim();
-                        localStorage.setItem(HOST_STORAGE_KEY, dailyHost);
-                        document.getElementById('dailyHostInput').value = dailyHost;
-
-                        if (cloudReady && currentUser) {
-                            await setDoc(getSettingsDoc(), {
-                                host: dailyHost,
-                                updatedAt: Date.now()
-                            }, { merge: true });
+                    // استعادة هوستات اليوم إذا كانت موجودة في الملف
+                    if (Array.isArray(parsed.dailyHosts) && parsed.dailyHosts.length > 0) {
+                        for (const h of parsed.dailyHosts) {
+                            if (!h.url) continue;
+                            const exists = dailyHosts.some(existing => existing.url === h.url);
+                            if (!exists) {
+                                dailyHosts.push({
+                                    id: h.id || ('h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5)),
+                                    label: h.label || `هوست ${dailyHosts.length + 1}`,
+                                    url: String(h.url).trim()
+                                });
+                            }
+                        }
+                        saveLocalHosts();
+                        renderHostsManager();
+                        await syncHostsToCloud();
+                    } else if (parsed.dailyHost !== undefined && parsed.dailyHost !== '') {
+                        const urlTrimmed = String(parsed.dailyHost).trim();
+                        if (!dailyHosts.some(existing => existing.url === urlTrimmed)) {
+                            dailyHosts.push({
+                                id: 'h_' + Date.now(),
+                                label: `هوست ${dailyHosts.length + 1}`,
+                                url: urlTrimmed
+                            });
+                            saveLocalHosts();
+                            renderHostsManager();
+                            await syncHostsToCloud();
                         }
                     }
 
