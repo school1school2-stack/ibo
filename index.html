@@ -127,19 +127,19 @@
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // إعدادات المشروع من الصورة + دعم البيئة
+        // إعدادات المشروع الجديد ibo-tv-410db
         const defaultFirebaseConfig = {
-            apiKey: "AIzaSyBeFpJ76MQ-NyldR9DG5bhyviE0PRzl-og",
-            authDomain: "vulture-app-1efba.firebaseapp.com",
-            databaseURL: "https://vulture-app-1efba-default-rtdb.firebaseio.com",
-            projectId: "vulture-app-1efba",
-            storageBucket: "vulture-app-1efba.firebasestorage.app",
-            messagingSenderId: "27107131702",
-            appId: "1:27107131702:web:2c782fbe400aba7c87b397",
-            measurementId: "G-41J4JJZEZG"
+            apiKey: "AIzaSyCIDNuiKnNw0YzKmoRZQ67pafsThEUxw1E",
+            authDomain: "ibo-tv-410db.firebaseapp.com",
+            projectId: "ibo-tv-410db",
+            storageBucket: "ibo-tv-410db.firebasestorage.app",
+            messagingSenderId: "499774105347",
+            appId: "1:499774105347:web:4943e55e589c8b4054eb36",
+            measurementId: "G-HZL0F1H1RL"
         };
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vulture-app-1efba';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ibo-tv-410db';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
