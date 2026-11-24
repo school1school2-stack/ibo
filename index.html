@@ -390,6 +390,24 @@
                                     <button type="button" onclick="applyQuickDuration(12)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-900 dark:text-emerald-300 transition">+ سنة كاملة</button>
                                 </div>
                             </div>
+
+                            <!-- مربع اللصق السريع للوقت والتاريخ بصيغة 04/10/2027 19:06 -->
+                            <div class="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-amber-300/70 dark:border-amber-700/50 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                <input type="text" id="quickDatePasteInput" dir="ltr" placeholder="الصق التاريخ هنا: 04/10/2027 19:06"
+                                    oninput="handleQuickDatePaste(this.value, 'end')"
+                                    class="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-amber-500 outline-none text-xs sm:text-sm mono text-left bg-slate-50 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[38px]">
+                                <div class="grid grid-cols-2 sm:flex items-center gap-1.5 shrink-0">
+                                    <button type="button" onclick="pasteFromClipboardToDate('start')"
+                                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg text-[11px] sm:text-xs transition min-h-[38px]">
+                                        📋 لصق كبداية
+                                    </button>
+                                    <button type="button" onclick="pasteFromClipboardToDate('end')"
+                                        class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-lg text-[11px] sm:text-xs transition min-h-[38px]">
+                                        📋 لصق كنهاية
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">تاريخ بداية الاشتراك</label>
@@ -1000,6 +1018,83 @@
             return `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
         }
 
+        // تحليل التاريخ والوقت الملصق بصيغة 04/10/2027 19:06 أو 2027-10-04 19:06
+        function parseCustomDateTime(rawStr) {
+            if (!rawStr) return null;
+            const cleaned = String(rawStr).trim().replace(/\s+/g, ' ');
+
+            // مطابقة صيغة DD/MM/YYYY HH:mm أو DD-MM-YYYY HH:mm (مع أو بدون ثواني)
+            const dmyMatch = cleaned.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})(?:[\sT]+(\d{1,2}):(\d{2})(?::\d{2})?)?$/);
+            if (dmyMatch) {
+                const day = parseInt(dmyMatch[1], 10);
+                const month = parseInt(dmyMatch[2], 10);
+                const year = parseInt(dmyMatch[3], 10);
+                const hour = dmyMatch[4] !== undefined ? parseInt(dmyMatch[4], 10) : 0;
+                const minute = dmyMatch[5] !== undefined ? parseInt(dmyMatch[5], 10) : 0;
+
+                if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+                    const dt = new Date(year, month - 1, day, hour, minute);
+                    if (!isNaN(dt.getTime())) return toLocalDateTimeInput(dt);
+                }
+            }
+
+            // مطابقة صيغة YYYY/MM/DD HH:mm أو YYYY-MM-DD HH:mm
+            const ymdMatch = cleaned.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})(?:[\sT]+(\d{1,2}):(\d{2})(?::\d{2})?)?$/);
+            if (ymdMatch) {
+                const year = parseInt(ymdMatch[1], 10);
+                const month = parseInt(ymdMatch[2], 10);
+                const day = parseInt(ymdMatch[3], 10);
+                const hour = ymdMatch[4] !== undefined ? parseInt(ymdMatch[4], 10) : 0;
+                const minute = ymdMatch[5] !== undefined ? parseInt(ymdMatch[5], 10) : 0;
+
+                if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+                    const dt = new Date(year, month - 1, day, hour, minute);
+                    if (!isNaN(dt.getTime())) return toLocalDateTimeInput(dt);
+                }
+            }
+
+            return null;
+        }
+
+        window.handleQuickDatePaste = function(rawVal, target = 'end') {
+            const parsed = parseCustomDateTime(rawVal);
+            if (!parsed) return false;
+
+            const targetInput = document.getElementById(target === 'start' ? 'subStartInput' : 'subEndInput');
+            if (targetInput) {
+                targetInput.value = parsed;
+                const formattedDisplay = formatDisplayDate(parsed);
+                showToast(`✓ تم تعيين ${target === 'start' ? 'بداية' : 'نهاية'} الاشتراك: ${formattedDisplay}`);
+                return true;
+            }
+            return false;
+        };
+
+        window.pasteFromClipboardToDate = async function(target = 'end') {
+            const quickInput = document.getElementById('quickDatePasteInput');
+            // أولاً: فحص إذا كان المستخدم قد لصق النص يدوياً في المربع
+            if (quickInput && quickInput.value.trim()) {
+                if (handleQuickDatePaste(quickInput.value.trim(), target)) {
+                    quickInput.value = '';
+                    return;
+                }
+            }
+
+            // ثانياً: محاولة القراءة من الحافظة مباشرة
+            try {
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    const clipText = await navigator.clipboard.readText();
+                    if (clipText && handleQuickDatePaste(clipText, target)) {
+                        if (quickInput) quickInput.value = '';
+                        return;
+                    }
+                }
+            } catch (e) {}
+
+            showToast('الصق التاريخ بصيغة 04/10/2027 19:06 في المربع المجاور');
+            if (quickInput) quickInput.focus();
+        };
+
         window.applyQuickDuration = function(months) {
             const startInput = document.getElementById('subStartInput');
             const endInput = document.getElementById('subEndInput');
@@ -1063,7 +1158,7 @@
             const d = new Date(dtStr);
             if (isNaN(d.getTime())) return dtStr;
             const pad = n => String(n).padStart(2, '0');
-            return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} - ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
         }
 
         function buildPulseBadgeHtml(subStart, subEnd) {
@@ -1130,8 +1225,8 @@
                             <span class="text-[11px] sm:text-xs font-extrabold ${titleColor}">${statusText}</span>
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                            ${subStart ? `<span class="bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700/60" dir="ltr">🟢 ${escapeHtml(formatDisplayDate(subStart))}</span>` : ''}
-                            ${subEnd ? `<span class="bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700/60" dir="ltr">🔴 ${escapeHtml(formatDisplayDate(subEnd))}</span>` : ''}
+                            ${subStart ? `<button type="button" onclick="copyText('${escapeHtml(formatDisplayDate(subStart))}', 'تم نسخ تاريخ البداية')" title="اضغط لنسخ تاريخ البداية" class="bg-white/90 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200/70 dark:border-slate-700/70 mono transition active:scale-95" dir="ltr">🟢 ${escapeHtml(formatDisplayDate(subStart))} 📋</button>` : ''}
+                            ${subEnd ? `<button type="button" onclick="copyText('${escapeHtml(formatDisplayDate(subEnd))}', 'تم نسخ تاريخ النهاية')" title="اضغط لنسخ تاريخ النهاية" class="bg-white/90 hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200/70 dark:border-slate-700/70 mono transition active:scale-95" dir="ltr">🔴 ${escapeHtml(formatDisplayDate(subEnd))} 📋</button>` : ''}
                         </div>
                     </div>
                     ${cellsHtml}
