@@ -325,16 +325,20 @@
                     <input type="hidden" id="editIdInput" value="">
                     
                     <div class="bg-indigo-50/60 dark:bg-indigo-950/30 p-3.5 sm:p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/50 space-y-3">
-                        <div class="text-xs sm:text-sm font-extrabold text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
-                            <span>📱 بيانات العميل (التطبيق)</span>
+                        <div class="flex flex-wrap items-center justify-between gap-1">
+                            <span class="text-xs sm:text-sm font-extrabold text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
+                                <span>📱 بيانات العميل (التطبيق)</span>
+                            </span>
+                            <span id="deviceFieldsHint" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">مطلوب لعملاء IBO و Shamel</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                             <div>
                                 <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">القسم / التطبيق</label>
-                                <select id="appInput"
+                                <select id="appInput" onchange="syncFormRequirementsByApp()"
                                     class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm font-bold bg-white dark:bg-slate-800 dark:text-slate-100 min-h-[44px]">
                                     <option value="ibo">قسم IBO Player</option>
                                     <option value="shamel">قسم Shamel TV</option>
+                                    <option value="nomac">برامج بدون ماك (No MAC)</option>
                                 </select>
                             </div>
                             <div>
@@ -342,15 +346,15 @@
                                 <input type="text" id="nameInput" required placeholder="مثال: أبو خالد"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[44px]">
                             </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">الماك أدريس (MAC)</label>
+                            <div id="macFieldGroup">
+                                <label id="macFieldLabel" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">الماك أدريس (MAC)</label>
                                 <input type="text" id="macInput" required maxlength="17" dir="ltr" placeholder="00:1A:79:XX:XX:XX"
                                     oninput="formatMac(this)"
                                     style="direction: ltr; unicode-bidi: isolate;"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm mono uppercase text-left bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[44px]">
                             </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">الرقم السري للتطبيق (Key)</label>
+                            <div id="keyFieldGroup">
+                                <label id="keyFieldLabel" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">الرقم السري للتطبيق (Key)</label>
                                 <input type="text" id="keyInput" required dir="ltr" placeholder="123456"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm mono text-left bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[44px]">
                             </div>
@@ -412,21 +416,26 @@
 
             <!-- مربع البحث وأقسام العرض المنفصلة -->
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                <div class="md:col-span-6">
+                <div class="md:col-span-5">
                     <input type="text" id="searchInput" oninput="renderList()" placeholder="🔍 ابحث بالاسم أو الماك أو رقم الاشتراك..."
                         class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none text-sm dark:text-slate-100 dark:placeholder-slate-500 shadow-sm min-h-[46px]">
                 </div>
                 
-                <div class="md:col-span-6 grid grid-cols-2 gap-2 bg-slate-200/70 dark:bg-slate-800/80 p-1.5 rounded-2xl">
+                <div class="md:col-span-7 grid grid-cols-3 gap-1.5 sm:gap-2 bg-slate-200/70 dark:bg-slate-800/80 p-1.5 rounded-2xl">
                     <button type="button" onclick="setSection('ibo')" id="tab-ibo"
-                        class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-1.5 min-h-[40px]">
-                        <span>قسم IBO Player</span>
-                        <span id="count-ibo" class="bg-slate-900/15 px-2 py-0.5 rounded-full text-xs">0</span>
+                        class="py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-1 min-h-[40px]">
+                        <span class="truncate">IBO Player</span>
+                        <span id="count-ibo" class="bg-slate-900/15 px-1.5 py-0.5 rounded-full text-xs">0</span>
                     </button>
                     <button type="button" onclick="setSection('shamel')" id="tab-shamel"
-                        class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1.5 min-h-[40px]">
-                        <span>قسم Shamel.tv</span>
-                        <span id="count-shamel" class="bg-slate-300/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-2 py-0.5 rounded-full text-xs">0</span>
+                        class="py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1 min-h-[40px]">
+                        <span class="truncate">Shamel.tv</span>
+                        <span id="count-shamel" class="bg-slate-300/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-1.5 py-0.5 rounded-full text-xs">0</span>
+                    </button>
+                    <button type="button" onclick="setSection('nomac')" id="tab-nomac"
+                        class="py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1 min-h-[40px]">
+                        <span class="truncate">بدون ماك</span>
+                        <span id="count-nomac" class="bg-slate-300/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-1.5 py-0.5 rounded-full text-xs">0</span>
                     </button>
                 </div>
             </div>
@@ -539,14 +548,50 @@
                 url: 'https://iboplayer.com/device/login',
                 btnText: 'نسخ الماك وفتح IBO ↗',
                 badgeClass: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700/50',
-                btnClass: 'bg-amber-400 hover:bg-amber-300 text-slate-900'
+                btnClass: 'bg-amber-400 hover:bg-amber-300 text-slate-900',
+                requiresDeviceCredentials: true
             },
             shamel: {
                 label: 'Shamel TV',
                 url: 'http://shamel.tv/',
                 btnText: 'نسخ الماك وفتح Shamel ↗',
                 badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700/50',
-                btnClass: 'bg-emerald-400 hover:bg-emerald-300 text-slate-900'
+                btnClass: 'bg-emerald-400 hover:bg-emerald-300 text-slate-900',
+                requiresDeviceCredentials: true
+            },
+            nomac: {
+                label: 'برامج بدون ماك',
+                url: '',
+                btnText: '',
+                badgeClass: 'bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-700/50',
+                btnClass: 'bg-violet-500 hover:bg-violet-400 text-white',
+                requiresDeviceCredentials: false
+            }
+        };
+
+        window.syncFormRequirementsByApp = function() {
+            const appSelect = document.getElementById('appInput');
+            const macInput = document.getElementById('macInput');
+            const keyInput = document.getElementById('keyInput');
+            const macLabel = document.getElementById('macFieldLabel');
+            const keyLabel = document.getElementById('keyFieldLabel');
+            const hintEl = document.getElementById('deviceFieldsHint');
+            if (!appSelect || !macInput || !keyInput) return;
+
+            const isNoMac = appSelect.value === 'nomac';
+            macInput.required = !isNoMac;
+            keyInput.required = !isNoMac;
+
+            if (macLabel) {
+                macLabel.textContent = isNoMac ? 'الماك أدريس (اختياري)' : 'الماك أدريس (MAC)';
+            }
+            if (keyLabel) {
+                keyLabel.textContent = isNoMac ? 'الرقم السري للتطبيق (اختياري)' : 'الرقم السري للتطبيق (Key)';
+            }
+            if (hintEl) {
+                hintEl.textContent = isNoMac
+                    ? 'اختياري في قسم بدون ماك — ركّز على بيانات الاشتراك والهوستات'
+                    : 'مطلوب لعملاء IBO و Shamel';
             }
         };
 
@@ -862,25 +907,35 @@
             currentSection = section;
             const tabIbo = document.getElementById('tab-ibo');
             const tabShamel = document.getElementById('tab-shamel');
+            const tabNoMac = document.getElementById('tab-nomac');
             const titleEl = document.getElementById('activeSectionTitle');
             const subEl = document.getElementById('activeSectionSubtitle');
             const appSelect = document.getElementById('appInput');
 
+            const inactiveTabClass = 'py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1 min-h-[40px]';
+
+            tabIbo.className = inactiveTabClass;
+            tabShamel.className = inactiveTabClass;
+            tabNoMac.className = inactiveTabClass;
+
             if (section === 'ibo') {
-                tabIbo.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-1.5 min-h-[40px]';
-                tabShamel.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1.5 min-h-[40px]';
+                tabIbo.className = 'py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-1 min-h-[40px]';
                 titleEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> عملاء قسم IBO Player فقط';
                 subEl.textContent = 'يظهر هنا عملاء IBO فقط';
-            } else {
-                tabShamel.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 text-white shadow-sm transition flex items-center justify-center gap-1.5 min-h-[40px]';
-                tabIbo.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1.5 min-h-[40px]';
+            } else if (section === 'shamel') {
+                tabShamel.className = 'py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-sm font-extrabold bg-emerald-500 text-white shadow-sm transition flex items-center justify-center gap-1 min-h-[40px]';
                 titleEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> عملاء قسم Shamel.tv فقط';
                 subEl.textContent = 'يظهر هنا عملاء Shamel.tv فقط';
+            } else {
+                tabNoMac.className = 'py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-sm font-extrabold bg-violet-600 text-white shadow-sm transition flex items-center justify-center gap-1 min-h-[40px]';
+                titleEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-violet-500"></span> عملاء برامج بدون ماك أدريس';
+                subEl.textContent = 'يظهر هنا العملاء بدون MAC Address';
             }
 
             if (appSelect && !document.getElementById('editIdInput').value) {
                 appSelect.value = section;
             }
+            syncFormRequirementsByApp();
             renderList();
         };
 
@@ -903,9 +958,10 @@
 
             document.getElementById('editIdInput').value = client.id;
             document.getElementById('appInput').value = client.app || 'ibo';
+            syncFormRequirementsByApp();
             document.getElementById('nameInput').value = client.name;
-            document.getElementById('macInput').value = client.mac;
-            document.getElementById('keyInput').value = client.key;
+            document.getElementById('macInput').value = client.mac || '';
+            document.getElementById('keyInput').value = client.key || '';
             document.getElementById('subNumInput').value = client.subNum || '';
             document.getElementById('subPassInput').value = client.subPass || '';
             document.getElementById('subStartInput').value = client.subStart || '';
@@ -923,6 +979,7 @@
         window.cancelEdit = function() {
             document.getElementById('editIdInput').value = '';
             document.getElementById('appInput').value = currentSection;
+            syncFormRequirementsByApp();
             document.getElementById('nameInput').value = '';
             document.getElementById('macInput').value = '';
             document.getElementById('keyInput').value = '';
@@ -1086,6 +1143,7 @@
             e.preventDefault();
             const editId = document.getElementById('editIdInput').value;
             const appType = document.getElementById('appInput').value;
+            const isNoMac = appType === 'nomac';
             const name = document.getElementById('nameInput').value.trim();
             const mac = document.getElementById('macInput').value.trim().toUpperCase();
             const key = document.getElementById('keyInput').value.trim();
@@ -1093,7 +1151,12 @@
             const subPass = document.getElementById('subPassInput').value.trim();
             const subStart = document.getElementById('subStartInput').value;
             const subEnd = document.getElementById('subEndInput').value;
-            if (!name || !mac || !key) return;
+
+            if (!name) return;
+            if (!isNoMac && (!mac || !key)) {
+                showToast('يرجى إدخال الماك أدريس والرقم السري للتطبيق');
+                return;
+            }
 
             if (editId) {
                 const idx = clients.findIndex(c => String(c.id) === String(editId));
@@ -1213,12 +1276,14 @@
 
             document.getElementById('count-ibo').textContent = clients.filter(c => (c.app || 'ibo') === 'ibo').length;
             document.getElementById('count-shamel').textContent = clients.filter(c => c.app === 'shamel').length;
+            document.getElementById('count-nomac').textContent = clients.filter(c => c.app === 'nomac').length;
 
             const filtered = clients.filter(c => {
                 const clientApp = c.app || 'ibo';
                 const matchesSection = clientApp === currentSection;
                 const matchesSearch = c.name.toLowerCase().includes(q) ||
-                    c.mac.toLowerCase().includes(q) ||
+                    (c.mac && c.mac.toLowerCase().includes(q)) ||
+                    (c.key && c.key.toLowerCase().includes(q)) ||
                     (c.subNum && c.subNum.toLowerCase().includes(q)) ||
                     (c.subPass && c.subPass.toLowerCase().includes(q));
                 return matchesSection && matchesSearch;
@@ -1233,6 +1298,7 @@
             emptyMsg.classList.add('hidden');
             container.innerHTML = filtered.map(c => {
                 const appInfo = APP_CONFIG[c.app || 'ibo'];
+                const isNoMacClient = (c.app || 'ibo') === 'nomac';
                 const hostsHtml = dailyHosts.length > 0
                     ? dailyHosts.map((h, idx) => `
                         <div class="bg-white/90 dark:bg-slate-900/90 p-2.5 rounded-xl border border-amber-200/80 dark:border-amber-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1249,8 +1315,55 @@
                     : '<div class="text-[11px] text-amber-800/70 dark:text-amber-300/60 px-1">لا يوجد هوست مضاف بالأعلى حالياً</div>';
 
                 const hasSubDetails = c.subNum || c.subPass;
+                const hasDeviceDetails = c.mac || c.key;
                 const isLocalOnly = String(c.id).startsWith('local_');
                 const pulseDurationHtml = buildPulseBadgeHtml(c.subStart, c.subEnd);
+
+                const siteActionBtn = (!isNoMacClient && appInfo.url && c.mac)
+                    ? `<a href="${appInfo.url}" target="_blank" rel="noopener noreferrer"
+                        onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك وفتح الموقع')"
+                        class="${appInfo.btnClass} font-bold px-3 py-2 rounded-xl text-xs transition flex items-center min-h-[38px]">
+                        ${appInfo.btnText}
+                    </a>`
+                    : '';
+
+                const deviceBoxHtml = hasDeviceDetails ? `
+                    <div class="bg-slate-50/90 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200/70 dark:border-slate-700/70 space-y-2.5">
+                        <span class="text-[11px] font-extrabold text-indigo-700 dark:text-indigo-300 block">📱 بيانات العميل (التطبيق)</span>
+                        <div class="grid grid-cols-1 ${c.mac && c.key ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} gap-2.5">
+                            ${c.mac ? `
+                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden min-w-0">
+                                    <span class="text-[10px] text-slate-400 block font-bold">MAC</span>
+                                    <code class="text-xs sm:text-sm font-bold text-indigo-700 dark:text-indigo-400 mono inline-block truncate max-w-full" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">${escapeHtml(c.mac)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك')"
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0 transition min-h-[36px]">
+                                    نسخ الماك
+                                </button>
+                            </div>
+                            ` : ''}
+
+                            ${c.key ? `
+                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2">
+                                <div class="overflow-hidden min-w-0">
+                                    <span class="text-[10px] text-slate-400 block font-bold">الرقم السري للتطبيق (Key)</span>
+                                    <code class="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 mono truncate block" dir="ltr">${escapeHtml(c.key)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(c.key)}', 'تم نسخ الرقم السري للتطبيق')"
+                                    class="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0 transition min-h-[36px]">
+                                    نسخ السري
+                                </button>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                ` : `
+                    <div class="bg-violet-50/70 dark:bg-violet-950/25 px-3 py-2 rounded-xl border border-violet-200/70 dark:border-violet-800/40 flex items-center gap-2 text-xs font-bold text-violet-800 dark:text-violet-300">
+                        <span>📲</span>
+                        <span>اشتراك بدون MAC Address (يعتمد على بيانات السيرفر والهوست)</span>
+                    </div>
+                `;
 
                 return `
                 <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between gap-3.5">
@@ -1267,11 +1380,7 @@
                                 class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1 min-h-[38px]">
                                 <span>🔗 مشاركة للعميل</span>
                             </button>
-                            <a href="${appInfo.url}" target="_blank" rel="noopener noreferrer"
-                                onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك وفتح الموقع')"
-                                class="${appInfo.btnClass} font-bold px-3 py-2 rounded-xl text-xs transition flex items-center min-h-[38px]">
-                                ${appInfo.btnText}
-                            </a>
+                            ${siteActionBtn}
                             <button type="button" onclick="editClient('${c.id}')"
                                 class="bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 font-bold px-3 py-2 rounded-xl text-xs transition min-h-[38px]">
                                 تعديل
@@ -1285,32 +1394,7 @@
 
                     ${pulseDurationHtml}
 
-                    <div class="bg-slate-50/90 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200/70 dark:border-slate-700/70 space-y-2.5">
-                        <span class="text-[11px] font-extrabold text-indigo-700 dark:text-indigo-300 block">📱 بيانات العميل (التطبيق)</span>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2">
-                                <div class="overflow-hidden min-w-0">
-                                    <span class="text-[10px] text-slate-400 block font-bold">MAC</span>
-                                    <code class="text-xs sm:text-sm font-bold text-indigo-700 dark:text-indigo-400 mono inline-block truncate max-w-full" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">${escapeHtml(c.mac)}</code>
-                                </div>
-                                <button type="button" onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك')"
-                                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0 transition min-h-[36px]">
-                                    نسخ الماك
-                                </button>
-                            </div>
-
-                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2">
-                                <div class="overflow-hidden min-w-0">
-                                    <span class="text-[10px] text-slate-400 block font-bold">الرقم السري للتطبيق (Key)</span>
-                                    <code class="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 mono truncate block" dir="ltr">${escapeHtml(c.key)}</code>
-                                </div>
-                                <button type="button" onclick="copyText('${escapeHtml(c.key)}', 'تم نسخ الرقم السري للتطبيق')"
-                                    class="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0 transition min-h-[36px]">
-                                    نسخ السري
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    ${deviceBoxHtml}
 
                     <div class="bg-amber-50/70 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200/80 dark:border-amber-800/40 space-y-2.5">
                         <span class="text-[11px] font-extrabold text-amber-900 dark:text-amber-300 block">🔑 بيانات الاشتراك</span>
@@ -1433,11 +1517,12 @@
 
                     let addedCount = 0;
                     for (const item of importedClients) {
-                        if (!item.name || !item.mac || !item.key) continue;
-                        const appType = item.app === 'shamel' ? 'shamel' : 'ibo';
-                        const macClean = String(item.mac).trim().toUpperCase();
+                        if (!item.name) continue;
+                        const appType = item.app === 'shamel' ? 'shamel' : (item.app === 'nomac' ? 'nomac' : 'ibo');
+                        if (appType !== 'nomac' && (!item.mac || !item.key)) continue;
+                        const macClean = item.mac ? String(item.mac).trim().toUpperCase() : '';
                         const nameClean = String(item.name).trim();
-                        const keyClean = String(item.key).trim();
+                        const keyClean = item.key ? String(item.key).trim() : '';
                         const subNumClean = item.subNum ? String(item.subNum).trim() : '';
                         const subPassClean = item.subPass ? String(item.subPass).trim() : '';
                         const subStartClean = item.subStart ? String(item.subStart).trim() : '';
@@ -1445,7 +1530,7 @@
 
                         const exists = clients.some(c =>
                             (c.app || 'ibo') === appType &&
-                            c.mac.toUpperCase() === macClean
+                            (macClean ? (c.mac || '').toUpperCase() === macClean : c.name.toLowerCase() === nameClean.toLowerCase() && (c.subNum || '') === subNumClean)
                         );
 
                         if (!exists) {
@@ -1554,7 +1639,7 @@
             document.getElementById('adminViewContainer').classList.add('hidden');
             document.getElementById('clientViewContainer').classList.remove('hidden');
 
-            const appType = shared.app === 'shamel' ? 'shamel' : 'ibo';
+            const appType = shared.app === 'shamel' ? 'shamel' : (shared.app === 'nomac' ? 'nomac' : 'ibo');
             const appInfo = APP_CONFIG[appType];
             document.title = `بيانات الاشتراك - ${shared.name}`;
 
@@ -1562,89 +1647,116 @@
             badgeEl.textContent = appInfo.label;
             badgeEl.className = appType === 'shamel'
                 ? 'text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-emerald-400 text-slate-900 shadow-sm'
-                : 'text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-amber-400 text-slate-900 shadow-sm';
+                : (appType === 'nomac'
+                    ? 'text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-violet-500 text-white shadow-sm'
+                    : 'text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-amber-400 text-slate-900 shadow-sm');
 
             document.getElementById('cvClientName').textContent = shared.name;
 
             const siteBtn = document.getElementById('cvOfficialSiteBtn');
-            siteBtn.href = appInfo.url;
-            siteBtn.className = `w-full sm:w-auto justify-center ${appInfo.btnClass} font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 min-h-[42px]`;
-            siteBtn.innerHTML = `<span>${appInfo.btnText}</span>`;
-            siteBtn.onclick = () => copyText(shared.mac, 'تم نسخ الماك وفتح الموقع');
-
-            function updateClientViewPulse() {
-                if (!shared.subStart && !shared.subEnd) return;
-                const sec = document.getElementById('cvDurationSection');
-                sec.classList.remove('hidden');
-
-                if (shared.subStart) {
-                    const sb = document.getElementById('cvStartDateBadge');
-                    sb.classList.remove('hidden');
-                    sb.textContent = `🟢 البداية: ${formatDisplayDate(shared.subStart)}`;
-                }
-                if (shared.subEnd) {
-                    const eb = document.getElementById('cvEndDateBadge');
-                    eb.classList.remove('hidden');
-                    eb.textContent = `🔴 النهاية: ${formatDisplayDate(shared.subEnd)}`;
-                }
-
-                const rem = calculateRemainingBreakdown(shared.subEnd);
-                const pingEl = document.getElementById('cvPulsePing');
-                const dotEl = document.getElementById('cvPulseDot');
-                const labelEl = document.getElementById('cvDurationStatusLabel');
-                const gridEl = document.getElementById('cvCountdownGrid');
-
-                if (!rem) {
-                    sec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 space-y-3';
-                    labelEl.textContent = '📅 تواريخ الاشتراك';
-                    gridEl.classList.add('hidden');
-                    return;
-                }
-
-                if (rem.expired) {
-                    sec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-rose-50/90 dark:bg-rose-950/35 border-rose-300 dark:border-rose-800/70 pulse-expired space-y-3';
-                    pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75';
-                    dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-rose-500';
-                    labelEl.className = 'text-xs sm:text-sm font-extrabold text-rose-700 dark:text-rose-300';
-                    labelEl.textContent = '⛔ انتهت مدة الاشتراك';
-                } else if (rem.totalHours <= 24 * 7) {
-                    sec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-amber-50/90 dark:bg-amber-950/35 border-amber-300 dark:border-amber-700/70 pulse-warning space-y-3';
-                    pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75';
-                    dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-amber-500';
-                    labelEl.className = 'text-xs sm:text-sm font-extrabold text-amber-800 dark:text-amber-300';
-                    labelEl.textContent = '⚠️ ينتهي الاشتراك قريباً • المتبقي';
-                } else {
-                    sec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-emerald-50/90 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 pulse-active space-y-3';
-                    pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
-                    dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-emerald-500';
-                    labelEl.className = 'text-xs sm:text-sm font-extrabold text-emerald-800 dark:text-emerald-300';
-                    labelEl.textContent = 'الاشتراك ساري • المدة المتبقية';
-                }
-
-                const numColor = rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100';
-                gridEl.innerHTML = `
-                    <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
-                        <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.years}</span>
-                        <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">سنة</span>
-                    </div>
-                    <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
-                        <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.months}</span>
-                        <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">شهر</span>
-                    </div>
-                    <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
-                        <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.days}</span>
-                        <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">يوم</span>
-                    </div>
-                    <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
-                        <span class="block text-base sm:text-lg font-extrabold mono ${rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'}">${rem.hours}</span>
-                        <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">ساعة</span>
-                    </div>
-                `;
+            if (appInfo.url && shared.mac) {
+                siteBtn.classList.remove('hidden');
+                siteBtn.href = appInfo.url;
+                siteBtn.className = `w-full sm:w-auto justify-center ${appInfo.btnClass} font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 min-h-[42px]`;
+                siteBtn.innerHTML = `<span>${appInfo.btnText}</span>`;
+                siteBtn.onclick = () => copyText(shared.mac, 'تم نسخ الماك وفتح الموقع');
+            } else {
+                siteBtn.classList.add('hidden');
+            }
+            document.getElementById('cvMacValue').textContent = shared.mac || 'غير مطلوب';
+            document.getElementById('cvMacValue').parentElement.parentElement.classList.toggle('hidden', !shared.mac);
+            if (shared.mac) {
+                document.getElementById('cvCopyMacBtn').onclick = () => copyText(shared.mac, 'تم نسخ الماك');
             }
 
-            updateClientViewPulse();
-            if (shared.subEnd) {
-                setInterval(updateClientViewPulse, 60000);
+            document.getElementById('cvKeyValue').textContent = shared.key || 'غير مطلوب';
+            document.getElementById('cvKeyValue').parentElement.parentElement.classList.toggle('hidden', !shared.key);
+            if (shared.key) {
+                document.getElementById('cvCopyKeyBtn').onclick = () => copyText(shared.key, 'تم نسخ الرقم السري للتطبيق');
+            }
+
+            if (!shared.mac && !shared.key) {
+                document.getElementById('cvMacValue').closest('.bg-slate-50, .dark\\:bg-slate-800\\/60').classList.add('hidden');
+            }
+
+            const cvDurationSec = document.getElementById('cvDurationSection');
+            if (shared.subStart || shared.subEnd) {
+                cvDurationSec.classList.remove('hidden');
+
+                const startBadge = document.getElementById('cvStartDateBadge');
+                const endBadge = document.getElementById('cvEndDateBadge');
+                if (shared.subStart) {
+                    startBadge.classList.remove('hidden');
+                    startBadge.textContent = '🟢 البداية: ' + formatDisplayDate(shared.subStart);
+                }
+                if (shared.subEnd) {
+                    endBadge.classList.remove('hidden');
+                    endBadge.textContent = '🔴 النهاية: ' + formatDisplayDate(shared.subEnd);
+                }
+
+                const updateClientViewPulse = () => {
+                    const rem = calculateRemainingBreakdown(shared.subEnd);
+                    const pingEl = document.getElementById('cvPulsePing');
+                    const dotEl = document.getElementById('cvPulseDot');
+                    const labelEl = document.getElementById('cvDurationStatusLabel');
+                    const gridEl = document.getElementById('cvCountdownGrid');
+
+                    if (!rem) {
+                        cvDurationSec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 space-y-3';
+                        labelEl.textContent = '📅 تواريخ الاشتراك';
+                        gridEl.classList.add('hidden');
+                        return;
+                    }
+
+                    gridEl.classList.remove('hidden');
+
+                    if (rem.expired) {
+                        cvDurationSec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-rose-50/90 dark:bg-rose-950/35 border-rose-300 dark:border-rose-800/70 pulse-expired space-y-3';
+                        pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75';
+                        dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-rose-500';
+                        labelEl.className = 'text-xs sm:text-sm font-extrabold text-rose-700 dark:text-rose-300';
+                        labelEl.textContent = '⛔ انتهت مدة الاشتراك';
+                    } else if (rem.totalHours <= 24 * 7) {
+                        cvDurationSec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-amber-50/90 dark:bg-amber-950/35 border-amber-300 dark:border-amber-700/70 pulse-warning space-y-3';
+                        pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75';
+                        dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-amber-500';
+                        labelEl.className = 'text-xs sm:text-sm font-extrabold text-amber-800 dark:text-amber-300';
+                        labelEl.textContent = '⚠️ ينتهي الاشتراك قريباً • المتبقي';
+                    } else {
+                        cvDurationSec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-emerald-50/90 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 pulse-active space-y-3';
+                        pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
+                        dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-emerald-500';
+                        labelEl.className = 'text-xs sm:text-sm font-extrabold text-emerald-800 dark:text-emerald-300';
+                        labelEl.textContent = 'الاشتراك ساري • المدة المتبقية';
+                    }
+
+                    const numColor = rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100';
+                    gridEl.innerHTML = `
+                        <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                            <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.years}</span>
+                            <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">سنة</span>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                            <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.months}</span>
+                            <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">شهر</span>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                            <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.days}</span>
+                            <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">يوم</span>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                            <span class="block text-base sm:text-lg font-extrabold mono ${rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'}">${rem.hours}</span>
+                            <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">ساعة</span>
+                        </div>
+                    `;
+                };
+
+                updateClientViewPulse();
+                if (shared.subEnd) {
+                    setInterval(updateClientViewPulse, 60000);
+                }
+            } else {
+                cvDurationSec.classList.add('hidden');
             }
 
             document.getElementById('cvMacValue').textContent = shared.mac;
@@ -1692,10 +1804,10 @@
             document.getElementById('cvCopyAllBtn').onclick = () => {
                 const lines = [
                     `التطبيق: ${appInfo.label}`,
-                    `الاسم: ${shared.name}`,
-                    `MAC: ${shared.mac}`,
-                    `Device Key: ${shared.key}`
+                    `الاسم: ${shared.name}`
                 ];
+                if (shared.mac) lines.push(`MAC: ${shared.mac}`);
+                if (shared.key) lines.push(`Device Key: ${shared.key}`);
                 if (validHosts.length > 0) {
                     validHosts.forEach((h, i) => {
                         lines.push(`${h.label || 'Host ' + (i + 1)}: ${h.url}`);
@@ -1730,7 +1842,7 @@
                             : (raw.hosts || [])
                     };
 
-                    if (shared.mac && shared.key) {
+                    if (shared.name) {
                         renderReadOnlyClientView(shared);
                         return;
                     }
@@ -1739,6 +1851,7 @@
                 }
             }
 
+            syncFormRequirementsByApp();
             initCloudSync();
             setInterval(() => {
                 if (clients.some(c => c.subEnd)) {
