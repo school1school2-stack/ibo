@@ -466,7 +466,19 @@
                 <span id="activeSectionSubtitle" class="text-xs font-bold text-slate-500 dark:text-slate-400">يظهر هنا عملاء IBO فقط</span>
             </div>
 
-            <section id="clientsList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></section>
+            <!-- قائمة منسدلة لاختيار العميل -->
+            <div id="clientSelectWrapper" class="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800">
+                <label for="clientDropdownSelect" class="block text-xs sm:text-sm font-extrabold text-slate-700 dark:text-slate-200 mb-2 flex items-center justify-between">
+                    <span>👤 اختر العميل لعرض بياناته:</span>
+                    <span id="filteredDropdownCount" class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">0 عميل</span>
+                </label>
+                <select id="clientDropdownSelect" onchange="onSelectClientDropdown(this.value)"
+                    class="w-full px-4 py-3 rounded-xl border-2 border-indigo-200 dark:border-indigo-800/70 focus:border-indigo-500 outline-none text-sm sm:text-base font-extrabold bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 min-h-[48px] transition cursor-pointer">
+                    <option value="">-- اختر عميلاً من القائمة --</option>
+                </select>
+            </div>
+
+            <section id="clientsList" class="grid grid-cols-1 gap-4"></section>
 
             <div id="emptyMsg" class="hidden text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-sm">
                 لا يوجد عملاء محفوظون في هذا القسم حالياً
@@ -558,6 +570,7 @@
         }
 
         let currentSection = 'ibo';
+        let selectedClientId = '';
         let cloudReady = false;
 
         const APP_CONFIG = {
@@ -953,7 +966,13 @@
             if (appSelect && !document.getElementById('editIdInput').value) {
                 appSelect.value = section;
             }
+            selectedClientId = '';
             syncFormRequirementsByApp();
+            renderList();
+        };
+
+        window.onSelectClientDropdown = function(id) {
+            selectedClientId = id;
             renderList();
         };
 
@@ -1293,8 +1312,11 @@
                 };
 
                 clients.unshift(newItem);
+                selectedClientId = tempId;
                 saveLocalBackup();
                 setSection(appType);
+                selectedClientId = tempId;
+                renderList();
                 cancelEdit();
 
                 try {
@@ -1312,7 +1334,11 @@
                     const localIdx = clients.findIndex(c => c.id === tempId);
                     if (localIdx !== -1) {
                         clients[localIdx].id = docRef.id;
+                        if (selectedClientId === tempId) {
+                            selectedClientId = docRef.id;
+                        }
                         saveLocalBackup();
+                        renderList();
                     }
                     cloudReady = true;
                     updateStatusBadge('متصل بسحابة Vulture ●', true);
@@ -1329,6 +1355,9 @@
 
         window.deleteClient = async function(id) {
             clients = clients.filter(c => String(c.id) !== String(id));
+            if (String(selectedClientId) === String(id)) {
+                selectedClientId = '';
+            }
             saveLocalBackup();
             renderList();
             showToast('تم حذف العميل');
@@ -1368,6 +1397,9 @@
             const q = document.getElementById('searchInput').value.toLowerCase().trim();
             const container = document.getElementById('clientsList');
             const emptyMsg = document.getElementById('emptyMsg');
+            const dropdownWrapper = document.getElementById('clientSelectWrapper');
+            const dropdownEl = document.getElementById('clientDropdownSelect');
+            const countBadge = document.getElementById('filteredDropdownCount');
 
             document.getElementById('count-ibo').textContent = clients.filter(c => (c.app || 'ibo') === 'ibo').length;
             document.getElementById('count-shamel').textContent = clients.filter(c => c.app === 'shamel').length;
@@ -1384,13 +1416,38 @@
                 return matchesSection && matchesSearch;
             });
 
+            if (countBadge) {
+                countBadge.textContent = `${filtered.length} عميل`;
+            }
+
             if (filtered.length === 0) {
+                if (dropdownWrapper) dropdownWrapper.classList.add('hidden');
                 container.innerHTML = '';
                 emptyMsg.classList.remove('hidden');
                 return;
             }
 
+            if (dropdownWrapper) dropdownWrapper.classList.remove('hidden');
             emptyMsg.classList.add('hidden');
+
+            // التحقق من العميل المحدد حالياً، أو اختيار أول عميل في القائمة تلقائياً
+            const stillExists = filtered.some(c => String(c.id) === String(selectedClientId));
+            if (!stillExists) {
+                selectedClientId = String(filtered[0].id);
+            }
+
+            // تعبئة القائمة المنسدلة بالعملاء المطابقين
+            if (dropdownEl) {
+                dropdownEl.innerHTML = filtered.map((c, idx) => {
+                    const extraInfo = c.mac ? ` (${c.mac})` : (c.subNum ? ` (${c.subNum})` : '');
+                    const isSelected = String(c.id) === String(selectedClientId) ? 'selected' : '';
+                    return `<option value="${escapeHtml(c.id)}" ${isSelected}>${idx + 1}. ${escapeHtml(c.name)}${escapeHtml(extraInfo)}</option>`;
+                }).join('');
+            }
+
+            const selectedIndex = filtered.findIndex(c => String(c.id) === String(selectedClientId));
+            const selectedClient = selectedIndex !== -1 ? filtered[selectedIndex] : filtered[0];
+            const itemsToRender = selectedClient ? [{ client: selectedClient, index: Math.max(0, selectedIndex) }] : [];
 
             // لوحة ألوان متتالية وهادئة للبطاقات (متوافقة مع الوضع النهاري والليلي)
             const CARD_PALETTES = [
@@ -1403,7 +1460,7 @@
                 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200/90 dark:border-rose-800/60'
             ];
 
-            container.innerHTML = filtered.map((c, index) => {
+            container.innerHTML = itemsToRender.map(({ client: c, index }) => {
                 const cardThemeClass = CARD_PALETTES[index % CARD_PALETTES.length];
                 const appInfo = APP_CONFIG[c.app || 'ibo'];
                 const isNoMacClient = (c.app || 'ibo') === 'nomac';
