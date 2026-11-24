@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>مدير عملاء IBO & Shamel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            font-family: 'Cairo', sans-serif;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        @keyframes softPulseGlow {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35);
+            }
+            50% {
+                transform: scale(1.015);
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+            }
+        }
+        @keyframes warnPulseGlow {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+            }
+            50% {
+                transform: scale(1.015);
+                box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+            }
+        }
+        @keyframes dangerPulseGlow {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+            }
+            50% {
+                transform: scale(1.015);
+                box-shadow: 0 0 0 6px rgba(244, 63, 94, 0);
+            }
+        }
+        .pulse-active {
+            animation: softPulseGlow 2.4s infinite ease-in-out;
+        }
+        .pulse-warning {
+            animation: warnPulseGlow 1.8s infinite ease-in-out;
+        }
+        .pulse-expired {
+            animation: dangerPulseGlow 1.6s infinite ease-in-out;
+        }
+    </style>
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('ibo_theme_mode');
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen pb-14 transition-colors duration-200">
+
+    <!-- =========================================================
+         وضع العميل فقط (للقراءة والنسخ بدون أي صلاحية تعديل أو إدارة)
+         ========================================================= -->
+    <div id="clientViewContainer" class="hidden min-h-screen flex flex-col">
+        <header class="bg-indigo-700 dark:bg-slate-900 dark:border-b dark:border-slate-800 text-white shadow-md">
+            <div class="max-w-2xl mx-auto px-3 sm:px-5 py-3.5 sm:py-4 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="text-xl sm:text-2xl shrink-0">📺</span>
+                    <div class="min-w-0">
+                        <h1 class="text-base sm:text-lg font-extrabold leading-tight truncate">بيانات الاشتراك</h1>
+                        <p class="text-[11px] sm:text-xs text-indigo-200 dark:text-slate-400 font-semibold truncate">صفحة مخصصة للنسخ السريع (للقراءة فقط)</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="toggleDarkMode()" title="تبديل الوضع الليلي"
+                        class="theme-toggle-btn bg-white/15 hover:bg-white/25 dark:bg-slate-800 dark:hover:bg-slate-700 text-white w-10 h-10 rounded-xl text-base flex items-center justify-center transition">
+                        🌙
+                    </button>
+                    <span id="clientViewAppBadge" class="text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-amber-400 text-slate-900 shadow-sm">
+                        IBO Player
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-2xl w-full mx-auto px-3 sm:px-5 pt-5 sm:pt-7 flex-1 space-y-4">
+            <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-200/90 dark:border-slate-800 space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div>
+                        <span class="text-xs text-slate-400 dark:text-slate-400 font-bold block">مرحباً بك</span>
+                        <h2 id="cvClientName" class="text-xl sm:text-2xl font-extrabold text-slate-800 dark:text-slate-100 break-words">اسم العميل</h2>
+                    </div>
+                    <a id="cvOfficialSiteBtn" href="https://iboplayer.com/device/login" target="_blank" rel="noopener noreferrer"
+                        class="w-full sm:w-auto justify-center bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 min-h-[42px]">
+                        <span>نسخ الماك وفتح الموقع ↗</span>
+                    </a>
+                </div>
+
+                <!-- قسم مدة الاشتراك والعداد النابض للعميل -->
+                <div id="cvDurationSection" class="hidden rounded-2xl p-3.5 sm:p-4 border transition-all space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="relative flex h-3 w-3">
+                                <span id="cvPulsePing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span id="cvPulseDot" class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                            </span>
+                            <span id="cvDurationStatusLabel" class="text-xs sm:text-sm font-extrabold">حالة الاشتراك والمدة المتبقية</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+                            <span id="cvStartDateBadge" class="hidden px-2.5 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-700/70"></span>
+                            <span id="cvEndDateBadge" class="hidden px-2.5 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-700/70"></span>
+                        </div>
+                    </div>
+                    <div id="cvCountdownGrid" class="grid grid-cols-4 gap-2 text-center"></div>
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-800/60 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs sm:text-sm font-extrabold text-indigo-800 dark:text-indigo-300">📱 بيانات التطبيق (Device Info)</span>
+                        <span class="text-[11px] text-slate-400 font-bold">اضغط على زر النسخ</span>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div class="overflow-hidden">
+                            <span class="text-[11px] text-slate-400 block font-bold">الماك أدريس (MAC Address)</span>
+                            <code id="cvMacValue" class="text-sm sm:text-base font-bold text-indigo-700 dark:text-indigo-400 mono inline-block mt-0.5 break-all" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">00:00:00:00:00:00</code>
+                        </div>
+                        <button type="button" id="cvCopyMacBtn"
+                            class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shrink-0 shadow-sm transition min-h-[42px]">
+                            📋 نسخ الماك
+                        </button>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div class="overflow-hidden">
+                            <span class="text-[11px] text-slate-400 block font-bold">الرقم السري للتطبيق (Device Key)</span>
+                            <code id="cvKeyValue" class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 mono inline-block mt-0.5 break-all" dir="ltr">123456</code>
+                        </div>
+                        <button type="button" id="cvCopyKeyBtn"
+                            class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 active:scale-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shrink-0 shadow-sm transition min-h-[42px]">
+                            📋 نسخ السري
+                        </button>
+                    </div>
+                </div>
+
+                <div id="cvSubSection" class="bg-amber-50/70 dark:bg-amber-950/25 p-3.5 sm:p-4 rounded-2xl border border-amber-200/90 dark:border-amber-800/50 space-y-3">
+                    <span class="text-xs sm:text-sm font-extrabold text-amber-900 dark:text-amber-300 block">🔑 بيانات السيرفر والاشتراك</span>
+                    <div id="cvHostsList" class="space-y-2.5"></div>
+
+                    <div id="cvSubNumBox" class="hidden bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-amber-200/70 dark:border-amber-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div class="overflow-hidden">
+                            <span class="text-[11px] text-slate-400 block font-bold">اسم المستخدم / رقم الاشتراك (Username)</span>
+                            <code id="cvSubNumValue" class="text-sm sm:text-base font-bold text-teal-700 dark:text-teal-400 mono inline-block mt-0.5 break-all" dir="ltr"></code>
+                        </div>
+                        <button type="button" id="cvCopySubNumBtn"
+                            class="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shrink-0 shadow-sm transition min-h-[42px]">
+                            📋 نسخ الاشتراك
+                        </button>
+                    </div>
+
+                    <div id="cvSubPassBox" class="hidden bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-amber-200/70 dark:border-amber-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div class="overflow-hidden">
+                            <span class="text-[11px] text-slate-400 block font-bold">كلمة المرور للاشتراك (Password)</span>
+                            <code id="cvSubPassValue" class="text-sm sm:text-base font-bold text-rose-700 dark:text-rose-400 mono inline-block mt-0.5 break-all" dir="ltr"></code>
+                        </div>
+                        <button type="button" id="cvCopySubPassBtn"
+                            class="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shrink-0 shadow-sm transition min-h-[42px]">
+                            📋 نسخ الباسورد
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" id="cvCopyAllBtn"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-extrabold py-3.5 rounded-2xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2 min-h-[48px]">
+                    <span>📄 نسخ جميع البيانات كنص واحد</span>
+                </button>
+            </div>
+
+            <!-- قسم البرامج والتطبيقات للعميل -->
+            <div id="cvAppsSection" class="hidden bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-200/90 dark:border-slate-800 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-xl sm:text-2xl">📲</span>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100">قسم البرامج والتطبيقات</h3>
+                            <p class="text-[11px] sm:text-xs text-slate-400">حمّل التطبيق مباشرة أو انسخ كود Downloader</p>
+                        </div>
+                    </div>
+                    <span id="cvAppsCountBadge" class="text-xs font-extrabold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full">0 برنامج</span>
+                </div>
+                <div id="cvAppsList" class="grid grid-cols-1 gap-3.5"></div>
+            </div>
+
+            <p class="text-center text-xs text-slate-400 dark:text-slate-500 px-2">
+                هذه الصفحة مخصصة لعرض ونسخ بيانات اشتراكك بأمان ولا يمكن تعديل البيانات منها.
+            </p>
+        </main>
+    </div>
+
+    <!-- =========================================================
+         لوحة الإدارة الكاملة (تظهر للمدير فقط عند فتح الرابط الرئيسي)
+         ========================================================= -->
+    <div id="adminViewContainer">
+        <!-- الهيدر -->
+        <header class="bg-indigo-700 dark:bg-slate-900 dark:border-b dark:border-slate-800 text-white shadow-md sticky top-0 z-20">
+            <div class="max-w-5xl mx-auto px-3 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div class="flex flex-wrap items-center justify-between sm:justify-start gap-2">
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-base sm:text-lg font-extrabold">مدير عملاء IPTV</h1>
+                        <span id="cloudStatus" class="text-[11px] bg-indigo-800/80 dark:bg-slate-800 text-indigo-100 px-2.5 py-0.5 rounded-full font-bold">
+                            جاري الربط...
+                        </span>
+                    </div>
+                    <button type="button" onclick="forceSyncNow()"
+                        class="text-[11px] sm:text-xs bg-white/15 hover:bg-white/25 dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-3 py-1.5 rounded-full font-bold transition min-h-[32px]">
+                        🔄 مزامنة الآن
+                    </button>
+                </div>
+                <div class="grid grid-cols-3 sm:flex items-center gap-2 w-full sm:w-auto">
+                    <button type="button" onclick="toggleDarkMode()" title="تبديل الوضع الليلي"
+                        class="theme-toggle-btn bg-white/15 hover:bg-white/25 dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-3 py-2 rounded-xl text-xs font-extrabold shadow-sm transition flex items-center justify-center gap-1 min-h-[38px]">
+                        <span>🌙</span>
+                        <span class="sm:hidden text-[11px]">الوضع</span>
+                    </button>
+                    <a href="https://iboplayer.com/device/login" target="_blank" rel="noopener noreferrer"
+                        class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-3 py-2 rounded-xl text-xs shadow transition text-center flex items-center justify-center min-h-[38px]">
+                        موقع IBO ↗
+                    </a>
+                    <a href="http://shamel.tv/" target="_blank" rel="noopener noreferrer"
+                        class="bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-extrabold px-3 py-2 rounded-xl text-xs shadow transition text-center flex items-center justify-center min-h-[38px]">
+                        موقع Shamel ↗
+                    </a>
+                </div>
+            </div>
+            <!-- شريط تشخيص الخطأ إن وجد -->
+            <div id="errorBanner" class="hidden bg-rose-600 text-white text-xs font-bold px-4 py-2 text-center"></div>
+        </header>
+
+        <main class="max-w-5xl mx-auto px-3 sm:px-5 pt-4 sm:pt-6 space-y-5">
+
+            <!-- قسم هوستات اليوم -->
+            <section class="bg-amber-50 dark:bg-amber-950/25 p-4 sm:p-5 rounded-2xl shadow-sm border border-amber-200/90 dark:border-amber-800/50 space-y-3.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-xl">🌐</span>
+                        <div>
+                            <h2 class="text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-300">هوستات اليوم (Daily Hosts)</h2>
+                            <p class="text-[11px] sm:text-xs text-amber-800/80 dark:text-amber-200/70">تظهر جميع الهوستات المضافة هنا تلقائياً داخل بطاقة كل عميل وعند مشاركة الرابط</p>
+                        </div>
+                    </div>
+                    <span id="hostsCountBadge" class="text-[11px] sm:text-xs font-extrabold bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 px-3 py-1 rounded-full">
+                        0 هوست
+                    </span>
+                </div>
+
+                <form onsubmit="addDailyHost(event)" class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                    <input type="text" id="hostLabelInput" placeholder="اسم الهوست (اختياري)"
+                        class="md:col-span-4 px-3.5 py-2.5 rounded-xl border border-amber-300/80 dark:border-amber-800/60 focus:border-amber-500 outline-none text-xs sm:text-sm bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 min-h-[42px]">
+                    <input type="text" id="hostUrlInput" required dir="ltr" placeholder="http://example.com:8080"
+                        class="md:col-span-6 px-3.5 py-2.5 rounded-xl border border-amber-300/80 dark:border-amber-800/60 focus:border-amber-500 outline-none text-xs sm:text-sm mono text-left bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 min-h-[42px]">
+                    <button type="submit"
+                        class="md:col-span-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition min-h-[42px]">
+                        + إضافة
+                    </button>
+                </form>
+
+                <div id="hostsListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+            </section>
+
+            <!-- قسم النسخ الاحتياطي + الرقم السري الخاص -->
+            <section class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-lg">💾</span>
+                        <div>
+                            <h2 class="text-xs sm:text-sm font-extrabold text-slate-700 dark:text-slate-200">النسخ الاحتياطي الكامل</h2>
+                            <p class="text-[11px] sm:text-xs text-slate-400">حفظ أو استعادة جميع العملاء (IBO و Shamel) مع الهوستات والرقم السري</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 sm:flex items-center gap-2 w-full md:w-auto">
+                        <button type="button" onclick="exportBackup()"
+                            class="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm min-h-[42px]">
+                            <span>⬇ تصدير نسخة</span>
+                        </button>
+                        <label class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5 min-h-[42px]">
+                            <span>⬆ استيراد نسخة</span>
+                            <input type="file" id="importFileInput" accept=".json" onchange="importBackup(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-3.5 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-lg">🔒</span>
+                        <div>
+                            <span class="text-xs sm:text-sm font-extrabold text-slate-700 dark:text-slate-200 block">الرقم السري الخاص بي (قفل البيانات)</span>
+                            <span class="text-[11px] sm:text-xs text-slate-400">يُحفظ في النسخة الاحتياطية ويظهر لنسخه بسهولة في IBO و Shamel</span>
+                        </div>
+                    </div>
+                    <form onsubmit="savePersonalPin(event)" class="grid grid-cols-12 sm:flex items-center gap-2 w-full md:w-auto">
+                        <input type="text" id="personalPinInput" dir="ltr" placeholder="0000"
+                            class="col-span-5 sm:w-32 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-purple-500 outline-none text-sm mono font-bold text-center bg-slate-50 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[42px]">
+                        <button type="submit"
+                            class="col-span-3 sm:w-auto bg-slate-700 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shrink-0 min-h-[42px]">
+                            حفظ
+                        </button>
+                        <button type="button" id="copyPersonalPinBtn" onclick="copyPersonalPin()"
+                            class="col-span-4 sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-sm transition shrink-0 flex items-center justify-center gap-1 min-h-[42px]">
+                            <span>📋 نسخ السري</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- قسم إدارة البرامج والتطبيقات (تظهر للعميل) -->
+            <section class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-xl">📲</span>
+                        <div>
+                            <h2 class="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100">قسم البرامج والتطبيقات (للتحميل)</h2>
+                            <p class="text-[11px] sm:text-xs text-slate-400">أضف البرامج مع الصورة وكود Downloader والرابط والشرح لتظهر للعميل</p>
+                        </div>
+                    </div>
+                    <span id="adminAppsCountBadge" class="text-xs font-extrabold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full">
+                        0 برنامج
+                    </span>
+                </div>
+
+                <form id="appStoreForm" onsubmit="saveAppProgram(event)" class="bg-slate-50/90 dark:bg-slate-800/50 p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                    <input type="hidden" id="editProgramIdInput" value="">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div class="md:col-span-4">
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">1. اسم البرنامج</label>
+                            <input type="text" id="progNameInput" required placeholder="مثال: IBO Player Pro"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-900 dark:text-slate-100 min-h-[44px]">
+                        </div>
+                        <div class="md:col-span-4">
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">2. صورة البرنامج (من الاستديو)</label>
+                            <div class="flex items-center gap-2">
+                                <label class="flex-1 bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold px-3 py-2.5 rounded-xl text-xs cursor-pointer flex items-center justify-center gap-1.5 min-h-[44px] transition">
+                                    <span>🖼️ اختر صورة</span>
+                                    <input type="file" id="progImageFileInput" accept="image/*" onchange="handleProgramImageSelect(event)" class="hidden">
+                                </label>
+                                <img id="progImagePreview" src="" alt="معاينة" class="hidden w-11 h-11 rounded-xl object-cover border border-slate-300 dark:border-slate-600 shrink-0">
+                                <button type="button" id="clearProgImageBtn" onclick="clearProgramImage()" class="hidden text-rose-500 hover:text-rose-600 text-xs font-bold px-2">✕</button>
+                            </div>
+                        </div>
+                        <div class="md:col-span-4">
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">3. رقم التحميل (Downloader)</label>
+                            <input type="text" id="progDownloaderInput" dir="ltr" placeholder="مثال: 789456"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm mono text-left bg-white dark:bg-slate-900 dark:text-slate-100 min-h-[44px]">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div class="md:col-span-6">
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">4. رابط التحميل المباشر</label>
+                            <input type="url" id="progUrlInput" dir="ltr" placeholder="https://example.com/app.apk"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm mono text-left bg-white dark:bg-slate-900 dark:text-slate-100 min-h-[44px]">
+                        </div>
+                        <div class="md:col-span-6">
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">5. شرح البرنامج</label>
+                            <input type="text" id="progDescInput" placeholder="اكتب شرحاً مختصراً لطريقة التثبيت والاستخدام..."
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-900 dark:text-slate-100 min-h-[44px]">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <button type="submit" id="saveProgramBtn"
+                            class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition min-h-[42px]">
+                            + إضافة البرنامج للقائمة
+                        </button>
+                        <button type="button" id="cancelProgramEditBtn" onclick="cancelProgramEdit()"
+                            class="hidden bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm min-h-[42px]">
+                            إلغاء
+                        </button>
+                    </div>
+                </form>
+
+                <div id="adminProgramsList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </section>
+
+            <!-- نموذج إضافة / تعديل عميل -->
+            <section class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800">
+                <div class="flex items-center justify-between mb-3.5">
+                    <h2 id="formTitle" class="text-sm sm:text-base font-extrabold text-slate-700 dark:text-slate-200">إضافة عميل جديد</h2>
+                    <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:underline py-1 px-2">
+                        إلغاء التعديل ✕
+                    </button>
+                </div>
+                <form id="clientForm" onsubmit="saveClient(event)" class="space-y-4">
+                    <input type="hidden" id="editIdInput" value="">
+                    
+                    <div class="bg-indigo-50/60 dark:bg-indigo-950/30 p-3.5 sm:p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/50 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-1">
+                            <span class="text-xs sm:text-sm font-extrabold text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
+                                <span>📱 بيانات العميل (التطبيق)</span>
+                            </span>
+                            <span id="deviceFieldsHint" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">مطلوب لعملاء IBO و Shamel</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">القسم / التطبيق</label>
+                                <select id="appInput" onchange="syncFormRequirementsByApp()"
+                                    class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm font-bold bg-white dark:bg-slate-800 dark:text-slate-100 min-h-[44px]">
+                                    <option value="ibo">قسم IBO Player</option>
+                                    <option value="shamel">قسم Shamel TV</option>
+                                    <option value="nomac">برامج بدون ماك (No MAC)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">اسم العميل</label>
+                                <input type="text" id="nameInput" required placeholder="مثال: أبو خالد"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[44px]">
+                            </div>
+                            <div id="macFieldGroup">
+                                <label id="macFieldLabel" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">الماك أدريس (MAC)</label>
+                                <input type="text" id="macInput" required maxlength="17" dir="ltr" placeholder="00:1A:79:XX:XX:XX"
+                                    oninput="formatMac(this)"
+                                    style="direction: ltr; unicode-bidi: isolate;"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm mono uppercase text-left bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[44px]">
+                            </div>
+                            <div id="keyFieldGroup">
+                                <label id="keyFieldLabel" class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">الرقم السري للتطبيق (Key)</label>
+                                <input type="text" id="keyInput" required dir="ltr" placeholder="123456"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm mono text-left bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[44px]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50/60 dark:bg-amber-950/20 p-3.5 sm:p-4 rounded-xl border border-amber-200/70 dark:border-amber-800/40 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-1">
+                            <span class="text-xs sm:text-sm font-extrabold text-amber-900 dark:text-amber-300">🔑 بيانات الاشتراك (مع هوستات اليوم)</span>
+                            <span class="text-[11px] text-amber-700 dark:text-amber-400/80 font-semibold">الهوست يُضاف تلقائياً من الأعلى</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">رقم الاشتراك (Username)</label>
+                                <input type="text" id="subNumInput" dir="ltr" placeholder="987654321"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-amber-500 outline-none text-sm mono text-left bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[44px]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">الرقم السري للاشتراك (Password)</label>
+                                <input type="text" id="subPassInput" dir="ltr" placeholder="pass12345"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-amber-500 outline-none text-sm mono text-left bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[44px]">
+                            </div>
+                        </div>
+
+                        <!-- حقول بداية ونهاية الاشتراك + أزرار اختصار سريعة -->
+                        <div class="pt-2 border-t border-amber-200/60 dark:border-amber-800/40 space-y-2.5">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="text-xs font-bold text-amber-900 dark:text-amber-300">📅 مدة الاشتراك (البداية والنهاية)</span>
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <button type="button" onclick="applyQuickDuration(1)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-200/80 hover:bg-amber-300 dark:bg-amber-900/60 dark:hover:bg-amber-800/70 text-amber-950 dark:text-amber-200 transition">+ شهر</button>
+                                    <button type="button" onclick="applyQuickDuration(3)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-200/80 hover:bg-amber-300 dark:bg-amber-900/60 dark:hover:bg-amber-800/70 text-amber-950 dark:text-amber-200 transition">+ 3 أشهر</button>
+                                    <button type="button" onclick="applyQuickDuration(6)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-200/80 hover:bg-amber-300 dark:bg-amber-900/60 dark:hover:bg-amber-800/70 text-amber-950 dark:text-amber-200 transition">+ 6 أشهر</button>
+                                    <button type="button" onclick="applyQuickDuration(12)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-900 dark:text-emerald-300 transition">+ سنة كاملة</button>
+                                </div>
+                            </div>
+
+                            <!-- مربع اللصق السريع للوقت والتاريخ بصيغة 04/10/2027 19:06 -->
+                            <div class="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-amber-300/70 dark:border-amber-700/50 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                <input type="text" id="quickDatePasteInput" dir="ltr" placeholder="الصق التاريخ هنا: 04/10/2027 19:06"
+                                    oninput="handleQuickDatePaste(this.value, 'end')"
+                                    class="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-amber-500 outline-none text-xs sm:text-sm mono text-left bg-slate-50 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[38px]">
+                                <div class="grid grid-cols-2 sm:flex items-center gap-1.5 shrink-0">
+                                    <button type="button" onclick="pasteFromClipboardToDate('start')"
+                                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg text-[11px] sm:text-xs transition min-h-[38px]">
+                                        📋 لصق كبداية
+                                    </button>
+                                    <button type="button" onclick="pasteFromClipboardToDate('end')"
+                                        class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-lg text-[11px] sm:text-xs transition min-h-[38px]">
+                                        📋 لصق كنهاية
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">تاريخ بداية الاشتراك</label>
+                                    <input type="datetime-local" id="subStartInput" dir="ltr"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-amber-500 outline-none text-sm mono bg-white dark:bg-slate-800 dark:text-slate-100 min-h-[44px]">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">تاريخ نهاية الاشتراك</label>
+                                    <input type="datetime-local" id="subEndInput" dir="ltr"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-amber-500 outline-none text-sm mono bg-white dark:bg-slate-800 dark:text-slate-100 min-h-[44px]">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button type="submit" id="submitBtn"
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-3 rounded-xl text-sm shadow-sm transition min-h-[46px]">
+                            + حفظ العميل
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- مربع البحث وأقسام العرض المنفصلة -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                <div class="md:col-span-5">
+                    <input type="text" id="searchInput" oninput="renderList()" placeholder="🔍 ابحث بالاسم أو الماك أو رقم الاشتراك..."
+                        class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none text-sm dark:text-slate-100 dark:placeholder-slate-500 shadow-sm min-h-[46px]">
+                </div>
+                
+                <div class="md:col-span-7 grid grid-cols-3 gap-1.5 sm:gap-2 bg-slate-200/70 dark:bg-slate-800/80 p-1.5 rounded-2xl">
+                    <button type="button" onclick="setSection('ibo')" id="tab-ibo"
+                        class="py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-1 min-h-[40px]">
+                        <span class="truncate">IBO Player</span>
+                        <span id="count-ibo" class="bg-slate-900/15 px-1.5 py-0.5 rounded-full text-xs">0</span>
+                    </button>
+                    <button type="button" onclick="setSection('shamel')" id="tab-shamel"
+                        class="py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1 min-h-[40px]">
+                        <span class="truncate">Shamel.tv</span>
+                        <span id="count-shamel" class="bg-slate-300/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-1.5 py-0.5 rounded-full text-xs">0</span>
+                    </button>
+                    <button type="button" onclick="setSection('nomac')" id="tab-nomac"
+                        class="py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1 min-h-[40px]">
+                        <span class="truncate">بدون ماك</span>
+                        <span id="count-nomac" class="bg-slate-300/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-1.5 py-0.5 rounded-full text-xs">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="sectionHeader" class="flex flex-wrap items-center justify-between gap-2 px-1">
+                <h3 id="activeSectionTitle" class="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                    عملاء قسم IBO Player فقط
+                </h3>
+                <span id="activeSectionSubtitle" class="text-xs font-bold text-slate-500 dark:text-slate-400">يظهر هنا عملاء IBO فقط</span>
+            </div>
+
+            <!-- قائمة منسدلة لاختيار العميل -->
+            <div id="clientSelectWrapper" class="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800">
+                <label for="clientDropdownSelect" class="block text-xs sm:text-sm font-extrabold text-slate-700 dark:text-slate-200 mb-2 flex items-center justify-between">
+                    <span>👤 اختر العميل لعرض بياناته:</span>
+                    <span id="filteredDropdownCount" class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">0 عميل</span>
+                </label>
+                <select id="clientDropdownSelect" onchange="onSelectClientDropdown(this.value)"
+                    class="w-full px-4 py-3 rounded-xl border-2 border-indigo-200 dark:border-indigo-800/70 focus:border-indigo-500 outline-none text-sm sm:text-base font-extrabold bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 min-h-[48px] transition cursor-pointer">
+                    <option value="">-- اختر عميلاً من القائمة --</option>
+                </select>
+            </div>
+
+            <section id="clientsList" class="grid grid-cols-1 gap-4"></section>
+
+            <div id="emptyMsg" class="hidden text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-sm">
+                لا يوجد عملاء محفوظون في هذا القسم حالياً
+            </div>
+
+        </main>
+    </div>
+
+    <!-- إشعار النسخ -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-indigo-600 text-white px-5 py-3 rounded-full text-xs sm:text-sm font-bold shadow-lg opacity-0 pointer-events-none transition-opacity duration-200 z-50 max-w-[90vw] text-center">
+        تم النسخ!
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // إدارة النظام الداكن الليلي
+        function updateThemeIcons() {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+                if (btn.querySelector('span')) {
+                    btn.querySelector('span').textContent = isDark ? '☀️' : '🌙';
+                } else {
+                    btn.textContent = isDark ? '☀️' : '🌙';
+                }
+            });
+        }
+
+        window.toggleDarkMode = function() {
+            const htmlEl = document.documentElement;
+            const isDark = htmlEl.classList.toggle('dark');
+            safeSetStorage('ibo_theme_mode', isDark ? 'dark' : 'light');
+            updateThemeIcons();
+            showToast(isDark ? '🌙 تم تفعيل الوضع الليلي' : '☀️ تم تفعيل الوضع النهاري');
+        };
+
+        updateThemeIcons();
+
+        // إعدادات مشروع السحابة: Vulture-App (vulture-app-1efba)
+        const defaultFirebaseConfig = {
+            apiKey: "AIzaSyBwFpJ75HQ-NyLDH9GGS6bhyvIE8PRzl-ug",
+            authDomain: "vulture-app-1efba.firebaseapp.com",
+            databaseURL: "https://vulture-app-1efba-default-rtdb.firebaseio.com",
+            projectId: "vulture-app-1efba",
+            storageBucket: "vulture-app-1efba.firebasestorage.app",
+            messagingSenderId: "27107131702",
+            appId: "1:27107131702:web:2c782fbe400ebe7c87b397",
+            measurementId: "G-41J4JJZEZG"
+        };
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vulture-app-1efba';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const STORAGE_KEY = 'ibo_simple_clients_v1';
+        const HOST_STORAGE_KEY = 'ibo_daily_host_v1';
+        const HOSTS_LIST_KEY = 'ibo_daily_hosts_list_v1';
+        const PERSONAL_PIN_KEY = 'ibo_personal_lock_pin_v1';
+        const PROGRAMS_STORAGE_KEY = 'ibo_programs_list_v1';
+
+        function safeGetStorage(key, fallback) {
+            try {
+                const v = localStorage.getItem(key);
+                return v !== null ? v : fallback;
+            } catch (e) {
+                return fallback;
+            }
+        }
+
+        function safeSetStorage(key, value) {
+            try {
+                localStorage.setItem(key, value);
+            } catch (e) {
+                console.warn('Storage blocked:', e);
+            }
+        }
+
+        let clients = JSON.parse(safeGetStorage(STORAGE_KEY, '[]'));
+        let personalPin = safeGetStorage(PERSONAL_PIN_KEY, '');
+        let programsList = JSON.parse(safeGetStorage(PROGRAMS_STORAGE_KEY, '[]'));
+        if (!Array.isArray(programsList)) programsList = [];
+        let tempProgramImageBase64 = '';
+
+        let dailyHosts = JSON.parse(safeGetStorage(HOSTS_LIST_KEY, 'null'));
+        if (!Array.isArray(dailyHosts)) {
+            const legacyHost = safeGetStorage(HOST_STORAGE_KEY, '');
+            dailyHosts = legacyHost ? [{ id: 'h_' + Date.now(), label: 'هوست 1', url: legacyHost }] : [];
+        }
+
+        let currentSection = 'ibo';
+        let selectedClientId = '';
+        let cloudReady = false;
+// ... existing code ... -->
+        function saveLocalHosts() {
+            safeSetStorage(HOSTS_LIST_KEY, JSON.stringify(dailyHosts));
+            safeSetStorage(HOST_STORAGE_KEY, dailyHosts[0]?.url || '');
+        }
+
+        function saveLocalPersonalPin() {
+            safeSetStorage(PERSONAL_PIN_KEY, personalPin);
+        }
+
+        function saveLocalPrograms() {
+            safeSetStorage(PROGRAMS_STORAGE_KEY, JSON.stringify(programsList));
+        }
+
+        // ضغط الصورة المختارة من الاستديو لتعمل بسلاسة في السحابة والمتصفح
+        function compressImageFile(file, maxSize = 220, quality = 0.78) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > h) {
+                            if (w > maxSize) {
+                                h = Math.round((h * maxSize) / w);
+                                w = maxSize;
+                            }
+                        } else {
+                            if (h > maxSize) {
+                                w = Math.round((w * maxSize) / h);
+                                h = maxSize;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.onerror = reject;
+                    img.src = ev.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.handleProgramImageSelect = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                tempProgramImageBase64 = await compressImageFile(file);
+                const preview = document.getElementById('progImagePreview');
+                const clearBtn = document.getElementById('clearProgImageBtn');
+                if (preview) {
+                    preview.src = tempProgramImageBase64;
+                    preview.classList.remove('hidden');
+                }
+                if (clearBtn) clearBtn.classList.remove('hidden');
+            } catch (err) {
+                console.error('Image processing error:', err);
+                showToast('تعذر قراءة الصورة');
+            }
+        };
+
+        window.clearProgramImage = function() {
+            tempProgramImageBase64 = '';
+            const fileInput = document.getElementById('progImageFileInput');
+            const preview = document.getElementById('progImagePreview');
+            const clearBtn = document.getElementById('clearProgImageBtn');
+            if (fileInput) fileInput.value = '';
+            if (preview) {
+                preview.src = '';
+                preview.classList.add('hidden');
+            }
+            if (clearBtn) clearBtn.classList.add('hidden');
+        };
+
+        async function syncProgramsToCloud() {
+            try {
+                await setDoc(getSettingsDoc(), {
+                    programsList: programsList,
+                    updatedAt: Date.now()
+                }, { merge: true });
+            } catch (err) {
+                console.error('Programs sync error:', err);
+                showErrorBanner('فشل مزامنة البرامج في السحابة (' + (err.code || err.message) + ')');
+            }
+        }
+
+        function renderAdminPrograms() {
+            const listEl = document.getElementById('adminProgramsList');
+            const badgeEl = document.getElementById('adminAppsCountBadge');
+            if (badgeEl) badgeEl.textContent = `${programsList.length} برنامج`;
+            if (!listEl) return;
+
+            if (programsList.length === 0) {
+                listEl.innerHTML = '<div class="md:col-span-2 text-center py-4 text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl">لا توجد برامج مضافة حالياً. أضف أول برنامج من النموذج أعلاه ليظهر للعملاء.</div>';
+                return;
+            }
+
+            listEl.innerHTML = programsList.map(p => {
+                const imgHtml = p.image
+                    ? `<img src="${p.image}" alt="${escapeHtml(p.name)}" class="w-14 h-14 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0">`
+                    : `<div class="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-300 flex items-center justify-center text-2xl shrink-0">📲</div>`;
+
+                return `
+                    <div class="bg-slate-50/90 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between gap-2.5">
+                        <div class="flex items-start gap-3">
+                            ${imgHtml}
+                            <div class="min-w-0 flex-1 space-y-1">
+                                <div class="flex flex-wrap items-center justify-between gap-1">
+                                    <h4 class="font-extrabold text-sm text-slate-800 dark:text-slate-100 truncate">${escapeHtml(p.name)}</h4>
+                                    ${p.downloader ? `<span class="text-[11px] font-extrabold bg-amber-100 dark:bg-amber-900/50 text-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-lg mono" dir="ltr">DL: ${escapeHtml(p.downloader)}</span>` : ''}
+                                </div>
+                                ${p.desc ? `<p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">${escapeHtml(p.desc)}</p>` : ''}
+                                ${p.url ? `<div class="text-[11px] text-indigo-600 dark:text-indigo-400 mono truncate" dir="ltr">${escapeHtml(p.url)}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-end gap-1.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                            ${p.downloader ? `<button type="button" onclick="copyText('${escapeHtml(p.downloader)}', 'تم نسخ كود Downloader')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition">نسخ الكود</button>` : ''}
+                            ${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition">فتح الرابط ↗</a>` : ''}
+                            <button type="button" onclick="editAppProgram('${p.id}')" class="bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition">تعديل</button>
+                            <button type="button" onclick="deleteAppProgram('${p.id}')" class="bg-rose-100 hover:bg-rose-200 dark:bg-rose-950/70 text-rose-600 dark:text-rose-300 font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition">حذف</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.saveAppProgram = async function(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editProgramIdInput').value;
+            const name = document.getElementById('progNameInput').value.trim();
+            const downloader = document.getElementById('progDownloaderInput').value.trim();
+            const url = document.getElementById('progUrlInput').value.trim();
+            const desc = document.getElementById('progDescInput').value.trim();
+
+            if (!name) return;
+
+            if (editId) {
+                const idx = programsList.findIndex(p => String(p.id) === String(editId));
+                if (idx !== -1) {
+                    programsList[idx] = {
+                        ...programsList[idx],
+                        name,
+                        image: tempProgramImageBase64 || programsList[idx].image || '',
+                        downloader,
+                        url,
+                        desc
+                    };
+                }
+                showToast('✓ تم تحديث بيانات البرنامج');
+            } else {
+                programsList.unshift({
+                    id: 'prog_' + Date.now(),
+                    name,
+                    image: tempProgramImageBase64 || '',
+                    downloader,
+                    url,
+                    desc
+                });
+                showToast('✓ تمت إضافة البرنامج بنجاح');
+            }
+
+            saveLocalPrograms();
+            renderAdminPrograms();
+            cancelProgramEdit();
+            await syncProgramsToCloud();
+        };
+
+        window.editAppProgram = function(id) {
+            const prog = programsList.find(p => String(p.id) === String(id));
+            if (!prog) return;
+
+            document.getElementById('editProgramIdInput').value = prog.id;
+            document.getElementById('progNameInput').value = prog.name;
+            document.getElementById('progDownloaderInput').value = prog.downloader || '';
+            document.getElementById('progUrlInput').value = prog.url || '';
+            document.getElementById('progDescInput').value = prog.desc || '';
+
+            tempProgramImageBase64 = prog.image || '';
+            const preview = document.getElementById('progImagePreview');
+            const clearBtn = document.getElementById('clearProgImageBtn');
+            if (prog.image && preview) {
+                preview.src = prog.image;
+                preview.classList.remove('hidden');
+                if (clearBtn) clearBtn.classList.remove('hidden');
+            } else {
+                clearProgramImage();
+            }
+
+            document.getElementById('saveProgramBtn').textContent = '✓ حفظ تعديلات البرنامج';
+            document.getElementById('cancelProgramEditBtn').classList.remove('hidden');
+        };
+
+        window.cancelProgramEdit = function() {
+            document.getElementById('editProgramIdInput').value = '';
+            document.getElementById('progNameInput').value = '';
+            document.getElementById('progDownloaderInput').value = '';
+            document.getElementById('progUrlInput').value = '';
+            document.getElementById('progDescInput').value = '';
+            clearProgramImage();
+            document.getElementById('saveProgramBtn').textContent = '+ إضافة البرنامج للقائمة';
+            document.getElementById('cancelProgramEditBtn').classList.add('hidden');
+        };
+
+        window.deleteAppProgram = async function(id) {
+            programsList = programsList.filter(p => String(p.id) !== String(id));
+            saveLocalPrograms();
+            renderAdminPrograms();
+            showToast('تم حذف البرنامج');
+            await syncProgramsToCloud();
+        };
+
+        function showErrorBanner(msg) {
+            const banner = document.getElementById('errorBanner');
+            if (!banner) return;
+            if (!msg) {
+                banner.classList.add('hidden');
+                banner.textContent = '';
+            } else {
+                banner.classList.remove('hidden');
+                banner.textContent = 'تنبيه الربط: ' + msg;
+            }
+        }
+
+        function updateStatusBadge(text, isSuccess) {
+            const el = document.getElementById('cloudStatus');
+            if (!el) return;
+            el.textContent = text;
+            el.className = isSuccess
+                ? 'text-[11px] bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 px-2.5 py-0.5 rounded-full font-bold'
+                : 'text-[11px] bg-rose-500/30 text-amber-100 border border-rose-300/40 px-2.5 py-0.5 rounded-full font-bold';
+        }
+
+        async function tryOptionalAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.warn('Optional auth skipped:', e.code);
+            }
+        }
+
+        async function syncHostsToCloud() {
+            try {
+                await setDoc(getSettingsDoc(), {
+                    dailyHosts: dailyHosts,
+                    dailyHost: dailyHosts[0]?.url || '',
+                    updatedAt: Date.now()
+                }, { merge: true });
+                showErrorBanner('');
+            } catch (err) {
+                console.error("Hosts sync error:", err);
+                showErrorBanner('فشل حفظ الهوست في السحابة (' + (err.code || err.message) + ')');
+            }
+        }
+
+        function renderHostsManager() {
+            const container = document.getElementById('hostsListContainer');
+            const badge = document.getElementById('hostsCountBadge');
+            if (badge) badge.textContent = `${dailyHosts.length} هوست`;
+            if (!container) return;
+
+            if (dailyHosts.length === 0) {
+                container.innerHTML = '<div class="md:col-span-2 text-center py-2.5 text-xs text-amber-800/70 dark:text-amber-300/60">لا توجد هوستات مضافة حالياً، أضف هوست اليوم بالأعلى ليظهر لكل عميل</div>';
+                return;
+            }
+
+            container.innerHTML = dailyHosts.map((h, idx) => `
+                <div class="bg-white/90 dark:bg-slate-900/90 px-3 py-2.5 rounded-xl border border-amber-200/80 dark:border-amber-800/50 flex items-center justify-between gap-2">
+                    <div class="overflow-hidden flex items-center gap-2 min-w-0">
+                        <span class="text-[11px] font-extrabold bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-lg shrink-0">
+                            ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}
+                        </span>
+                        <code class="text-xs font-bold text-slate-800 dark:text-slate-100 mono truncate" dir="ltr">${escapeHtml(h.url)}</code>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
+                            class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition min-h-[34px]">
+                            نسخ
+                        </button>
+                        <button type="button" onclick="deleteDailyHost('${h.id}')"
+                            class="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold px-2.5 py-1.5 rounded-lg text-xs transition min-h-[34px]">
+                            حذف
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.addDailyHost = async function(e) {
+            e.preventDefault();
+            const labelInput = document.getElementById('hostLabelInput');
+            const urlInput = document.getElementById('hostUrlInput');
+            const urlVal = urlInput.value.trim();
+            if (!urlVal) return;
+
+            const labelVal = labelInput.value.trim() || `هوست ${dailyHosts.length + 1}`;
+            dailyHosts.push({
+                id: 'h_' + Date.now(),
+                label: labelVal,
+                url: urlVal
+            });
+
+            labelInput.value = '';
+            urlInput.value = '';
+            saveLocalHosts();
+            renderHostsManager();
+            renderList();
+            showToast('تمت إضافة الهوست بنجاح');
+            await syncHostsToCloud();
+        };
+
+        function renderPersonalPinUI() {
+            const input = document.getElementById('personalPinInput');
+            const copyBtn = document.getElementById('copyPersonalPinBtn');
+            if (input && document.activeElement !== input) {
+                input.value = personalPin;
+            }
+            if (copyBtn) {
+                copyBtn.innerHTML = personalPin
+                    ? `<span>📋 نسخ (${escapeHtml(personalPin)})</span>`
+                    : `<span>📋 نسخ السري</span>`;
+            }
+        }
+
+        window.savePersonalPin = async function(e) {
+            e.preventDefault();
+            const input = document.getElementById('personalPinInput');
+            personalPin = input.value.trim();
+            saveLocalPersonalPin();
+            renderPersonalPinUI();
+            renderList();
+            showToast(personalPin ? 'تم حفظ الرقم السري الخاص بك' : 'تم مسح الرقم السري');
+
+            try {
+                await setDoc(getSettingsDoc(), {
+                    personalPin: personalPin,
+                    updatedAt: Date.now()
+                }, { merge: true });
+                showErrorBanner('');
+            } catch (err) {
+                console.error("PIN sync error:", err);
+                showErrorBanner('فشل حفظ الرقم السري في السحابة (' + (err.code || err.message) + ')');
+            }
+        };
+
+        window.copyPersonalPin = function() {
+            const inputVal = document.getElementById('personalPinInput')?.value.trim();
+            const pinToCopy = inputVal || personalPin;
+            if (!pinToCopy) {
+                showToast('اكتب الرقم السري الخاص بك أولاً');
+                document.getElementById('personalPinInput')?.focus();
+                return;
+            }
+            if (inputVal && inputVal !== personalPin) {
+                personalPin = inputVal;
+                saveLocalPersonalPin();
+                renderPersonalPinUI();
+                renderList();
+            }
+            copyText(pinToCopy, 'تم نسخ الرقم السري الخاص بك');
+        };
+
+        window.deleteDailyHost = async function(id) {
+            dailyHosts = dailyHosts.filter(h => String(h.id) !== String(id));
+            saveLocalHosts();
+            renderHostsManager();
+            renderList();
+            showToast('تم حذف الهوست');
+            await syncHostsToCloud();
+        };
+
+        window.forceSyncNow = async function() {
+            showToast('جاري المزامنة مع سحابة Vulture...');
+            try {
+                await tryOptionalAuth();
+                const snap = await getDocs(getClientsCol());
+                const cloudDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                let uploaded = 0;
+                for (const localItem of clients) {
+                    const existsInCloud = cloudDocs.some(c =>
+                        (c.app || 'ibo') === (localItem.app || 'ibo') &&
+                        (c.mac || '').toUpperCase() === (localItem.mac || '').toUpperCase()
+                    );
+                    if (!existsInCloud && localItem.mac) {
+                        await addDoc(getClientsCol(), {
+                            app: localItem.app || 'ibo',
+                            name: localItem.name,
+                            mac: localItem.mac,
+                            key: localItem.key,
+                            subNum: localItem.subNum || '',
+                            subPass: localItem.subPass || '',
+                            subStart: localItem.subStart || '',
+                            subEnd: localItem.subEnd || '',
+                            createdAt: Number(localItem.createdAt) || Date.now()
+                        });
+                        uploaded++;
+                    }
+                }
+
+                await syncHostsToCloud();
+                if (personalPin) {
+                    await setDoc(getSettingsDoc(), { personalPin }, { merge: true });
+                }
+                if (programsList.length > 0) {
+                    await syncProgramsToCloud();
+                }
+
+                cloudReady = true;
+                updateStatusBadge('متصل بسحابة Vulture ●', true);
+                showErrorBanner('');
+                showToast(`اكتملت المزامنة (تم رفع ${uploaded} عميل)`);
+            } catch (err) {
+                console.error('Manual sync failed:', err);
+                const code = err.code || err.message || 'خطأ غير معروف';
+                updateStatusBadge('فشل الربط: ' + code, false);
+                showErrorBanner('سبب الفشل: ' + code);
+                showToast('فشلت المزامنة: ' + code);
+            }
+        };
+
+        async function initCloudSync() {
+            renderPersonalPinUI();
+            renderHostsManager();
+            renderAdminPrograms();
+            renderList();
+
+            await tryOptionalAuth();
+
+            onSnapshot(getSettingsDoc(), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (typeof data.personalPin === 'string') {
+                        personalPin = data.personalPin;
+                        saveLocalPersonalPin();
+                        renderPersonalPinUI();
+                    }
+                    if (Array.isArray(data.programsList)) {
+                        programsList = data.programsList;
+                        saveLocalPrograms();
+                        renderAdminPrograms();
+                    }
+                    if (Array.isArray(data.dailyHosts)) {
+                        dailyHosts = data.dailyHosts;
+                        saveLocalHosts();
+                        renderHostsManager();
+                        renderList();
+                    } else if (data.dailyHost) {
+                        dailyHosts = [{ id: 'h_cloud', label: 'هوست 1', url: data.dailyHost }];
+                        saveLocalHosts();
+                        renderHostsManager();
+                        renderList();
+                    }
+                } else if (dailyHosts.length > 0 || personalPin || programsList.length > 0) {
+                    syncHostsToCloud();
+                    if (personalPin) {
+                        setDoc(getSettingsDoc(), { personalPin }, { merge: true });
+                    }
+                    if (programsList.length > 0) {
+                        syncProgramsToCloud();
+                    }
+                }
+            }, (err) => {
+                console.error("Settings snapshot error:", err);
+            });
+// ... existing code ... -->
+        window.exportBackup = function() {
+            const backupData = {
+                version: 4,
+                exportedAt: new Date().toISOString(),
+                personalPin: personalPin,
+                dailyHosts: dailyHosts,
+                dailyHost: dailyHosts[0]?.url || '',
+                programsList: programsList,
+                clients: clients.map(c => ({
+                    app: c.app || 'ibo',
+                    name: c.name,
+                    mac: c.mac,
+                    key: c.key,
+                    subNum: c.subNum || '',
+                    subPass: c.subPass || '',
+                    subStart: c.subStart || '',
+                    subEnd: c.subEnd || '',
+                    createdAt: Number(c.createdAt) || Date.now()
+                }))
+            };
+
+            const jsonStr = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `iptv-backup-${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`تم تصدير النسخة الاحتياطية (${clients.length} عميل)`);
+        };
+
+        window.importBackup = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    const importedClients = Array.isArray(parsed) ? parsed : parsed.clients;
+
+                    if (!Array.isArray(importedClients)) {
+                        showToast('صيغة ملف النسخة الاحتياطية غير صحيحة');
+                        return;
+                    }
+
+                    if (typeof parsed.personalPin === 'string' && parsed.personalPin.trim() !== '') {
+                        personalPin = parsed.personalPin.trim();
+                        saveLocalPersonalPin();
+                        renderPersonalPinUI();
+                        await setDoc(getSettingsDoc(), { personalPin, updatedAt: Date.now() }, { merge: true });
+                    }
+
+                    if (Array.isArray(parsed.dailyHosts) && parsed.dailyHosts.length > 0) {
+                        for (const h of parsed.dailyHosts) {
+                            if (!h.url) continue;
+                            const exists = dailyHosts.some(existing => existing.url === h.url);
+                            if (!exists) {
+                                dailyHosts.push({
+                                    id: h.id || ('h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5)),
+                                    label: h.label || `هوست ${dailyHosts.length + 1}`,
+                                    url: String(h.url).trim()
+                                });
+                            }
+                        }
+                        saveLocalHosts();
+                        renderHostsManager();
+                        await syncHostsToCloud();
+                    }
+
+                    if (Array.isArray(parsed.programsList) && parsed.programsList.length > 0) {
+                        for (const p of parsed.programsList) {
+                            if (!p.name) continue;
+                            const exists = programsList.some(existing => existing.name === p.name && (existing.url || '') === (p.url || ''));
+                            if (!exists) {
+                                programsList.push({
+                                    id: p.id || ('prog_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5)),
+                                    name: String(p.name).trim(),
+                                    image: p.image || '',
+                                    downloader: p.downloader ? String(p.downloader).trim() : '',
+                                    url: p.url ? String(p.url).trim() : '',
+                                    desc: p.desc ? String(p.desc).trim() : ''
+                                });
+                            }
+                        }
+                        saveLocalPrograms();
+                        renderAdminPrograms();
+                        await syncProgramsToCloud();
+                    }
+
+                    let addedCount = 0;
+                    for (const item of importedClients) {
+                        if (!item.name) continue;
+                        const appType = item.app === 'shamel' ? 'shamel' : (item.app === 'nomac' ? 'nomac' : 'ibo');
+                        const macClean = item.mac ? String(item.mac).trim().toUpperCase() : '';
+                        const nameClean = String(item.name).trim();
+                        const keyClean = item.key ? String(item.key).trim() : '';
+                        if (appType !== 'nomac' && (!macClean || !keyClean)) continue;
+                        const subNumClean = item.subNum ? String(item.subNum).trim() : '';
+                        const subPassClean = item.subPass ? String(item.subPass).trim() : '';
+                        const subStartClean = item.subStart ? String(item.subStart).trim() : '';
+                        const subEndClean = item.subEnd ? String(item.subEnd).trim() : '';
+
+                        const exists = clients.some(c =>
+                            (c.app || 'ibo') === appType &&
+                            (macClean ? (c.mac || '').toUpperCase() === macClean : (c.name === nameClean && (c.subNum || '') === subNumClean))
+                        );
+
+                        if (!exists) {
+                            const newClient = {
+                                id: 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                                app: appType,
+                                name: nameClean,
+                                mac: macClean,
+                                key: keyClean,
+                                subNum: subNumClean,
+                                subPass: subPassClean,
+                                subStart: subStartClean,
+                                subEnd: subEndClean,
+                                createdAt: Number(item.createdAt) || Date.now()
+                            };
+                            clients.unshift(newClient);
+                            addedCount++;
+
+                            try {
+                                await addDoc(getClientsCol(), {
+                                    app: appType,
+                                    name: nameClean,
+                                    mac: macClean,
+                                    key: keyClean,
+                                    subNum: subNumClean,
+                                    subPass: subPassClean,
+                                    subStart: subStartClean,
+                                    subEnd: subEndClean,
+                                    createdAt: newClient.createdAt
+                                });
+                            } catch (err) {}
+                        }
+                    }
+
+                    saveLocalBackup();
+                    renderList();
+                    showToast(`تم استيراد ${addedCount} عميل جديد بنجاح`);
+                } catch (err) {
+                    console.error('Import backup error:', err);
+                    showToast('تعذر قراءة ملف النسخة الاحتياطية');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        };
+
+            const encoded = encodePayloadUTF8(compactPayload);
+            const urlObj = new URL(SHARE_BASE_URL);
+            urlObj.searchParams.set('c', encoded);
+
+            const shareUrl = urlObj.toString();
+            copyText(shareUrl, `تم نسخ رابط العميل (${client.name}) جاهز للإرسال`);
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ url: shareUrl });
+                } catch (err) {}
+            }
+        };
+
+        function renderClientProgramsSection(fallbackPrograms = []) {
+            const appsSection = document.getElementById('cvAppsSection');
+            const appsListEl = document.getElementById('cvAppsList');
+            const countBadge = document.getElementById('cvAppsCountBadge');
+            if (!appsSection || !appsListEl) return;
+
+            const itemsToShow = programsList.length > 0 ? programsList : fallbackPrograms;
+            if (!itemsToShow || itemsToShow.length === 0) {
+                appsSection.classList.add('hidden');
+                return;
+            }
+
+            appsSection.classList.remove('hidden');
+            if (countBadge) countBadge.textContent = `${itemsToShow.length} برنامج`;
+
+            appsListEl.innerHTML = itemsToShow.map(p => {
+                const imgHtml = p.image
+                    ? `<img src="${p.image}" alt="${escapeHtml(p.name)}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-xs">`
+                    : `<div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-indigo-100 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-300 flex items-center justify-center text-3xl shrink-0">📲</div>`;
+
+                return `
+                    <div class="bg-slate-50/90 dark:bg-slate-800/60 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                        <div class="flex items-start gap-3.5">
+                            ${imgHtml}
+                            <div class="min-w-0 flex-1 space-y-1.5">
+                                <h4 class="font-extrabold text-base sm:text-lg text-slate-800 dark:text-slate-100 break-words">${escapeHtml(p.name)}</h4>
+                                ${p.desc ? `<p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">${escapeHtml(p.desc)}</p>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 ${p.downloader && p.url ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} gap-2 pt-1">
+                            ${p.downloader ? `
+                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-amber-200/80 dark:border-amber-800/50 flex items-center justify-between gap-2">
+                                <div>
+                                    <span class="text-[10px] text-amber-800 dark:text-amber-300 block font-extrabold">رقم التحميل (Downloader)</span>
+                                    <code class="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100 mono" dir="ltr">${escapeHtml(p.downloader)}</code>
+                                </div>
+                                <button type="button" onclick="copyText('${escapeHtml(p.downloader)}', 'تم نسخ كود Downloader')"
+                                    class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 transition min-h-[38px]">
+                                    📋 نسخ الكود
+                                </button>
+                            </div>
+                            ` : ''}
+
+                            ${p.url ? `
+                            <a href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer"
+                                class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-1.5 min-h-[44px]">
+                                <span>⬇️ تحميل البرنامج مباشرة</span>
+                            </a>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderReadOnlyClientView(shared) {
+            document.getElementById('adminViewContainer').classList.add('hidden');
+            document.getElementById('clientViewContainer').classList.remove('hidden');
+
+            // جلب البرامج المحدثة بالصور من السحابة للعميل مع دعم البرامج المضمنة في الرابط كاحتياط
+            renderClientProgramsSection(shared.programs || []);
+            tryOptionalAuth().then(() => {
+                onSnapshot(getSettingsDoc(), (docSnap) => {
+                    if (docSnap.exists() && Array.isArray(docSnap.data().programsList)) {
+                        programsList = docSnap.data().programsList;
+                        renderClientProgramsSection(shared.programs || []);
+                    }
+                });
+            }).catch(() => {});
+
+            const appType = shared.app === 'shamel' ? 'shamel' : (shared.app === 'nomac' ? 'nomac' : 'ibo');
+            const appInfo = APP_CONFIG[appType];
+            document.title = `بيانات الاشتراك - ${shared.name}`;
+
+            const badgeEl = document.getElementById('clientViewAppBadge');
+            badgeEl.textContent = appInfo.label;
+            badgeEl.className = appType === 'shamel'
+                ? 'text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-emerald-400 text-slate-900 shadow-sm'
+                : (appType === 'nomac'
+                    ? 'text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-violet-500 text-white shadow-sm'
+                    : 'text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-amber-400 text-slate-900 shadow-sm');
+
+            document.getElementById('cvClientName').textContent = shared.name;
+
+            const siteBtn = document.getElementById('cvOfficialSiteBtn');
+            if (appInfo.url && shared.mac) {
+                siteBtn.classList.remove('hidden');
+                siteBtn.href = appInfo.url;
+                siteBtn.className = `w-full sm:w-auto justify-center ${appInfo.btnClass} font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 min-h-[42px]`;
+                siteBtn.innerHTML = `<span>${appInfo.btnText}</span>`;
+                siteBtn.onclick = () => copyText(shared.mac, 'تم نسخ الماك وفتح الموقع');
+            } else {
+                siteBtn.classList.add('hidden');
+            }
+            document.getElementById('cvMacValue').textContent = shared.mac || 'غير مطلوب';
+            document.getElementById('cvMacValue').parentElement.parentElement.classList.toggle('hidden', !shared.mac);
+            if (shared.mac) {
+                document.getElementById('cvCopyMacBtn').onclick = () => copyText(shared.mac, 'تم نسخ الماك');
+            }
+
+            document.getElementById('cvKeyValue').textContent = shared.key || 'غير مطلوب';
+            document.getElementById('cvKeyValue').parentElement.parentElement.classList.toggle('hidden', !shared.key);
+            if (shared.key) {
+                document.getElementById('cvCopyKeyBtn').onclick = () => copyText(shared.key, 'تم نسخ الرقم السري للتطبيق');
+            }
+
+            if (!shared.mac && !shared.key) {
+                document.getElementById('cvMacValue').closest('.bg-slate-50, .dark\\:bg-slate-800\\/60').classList.add('hidden');
+            }
+
+            const cvDurationSec = document.getElementById('cvDurationSection');
+            if (shared.subStart || shared.subEnd) {
+                cvDurationSec.classList.remove('hidden');
+
+                const startBadge = document.getElementById('cvStartDateBadge');
+                const endBadge = document.getElementById('cvEndDateBadge');
+                if (shared.subStart) {
+                    startBadge.classList.remove('hidden');
+                    startBadge.textContent = '🟢 البداية: ' + formatDisplayDate(shared.subStart);
+                }
+                if (shared.subEnd) {
+                    endBadge.classList.remove('hidden');
+                    endBadge.textContent = '🔴 النهاية: ' + formatDisplayDate(shared.subEnd);
+                }
+
+                const updateClientViewPulse = () => {
+                    const rem = calculateRemainingBreakdown(shared.subEnd);
+                    const pingEl = document.getElementById('cvPulsePing');
+                    const dotEl = document.getElementById('cvPulseDot');
+                    const labelEl = document.getElementById('cvDurationStatusLabel');
+                    const gridEl = document.getElementById('cvCountdownGrid');
+
+                    if (!rem) {
+                        cvDurationSec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 space-y-3';
+                        labelEl.textContent = '📅 تواريخ الاشتراك';
+                        gridEl.classList.add('hidden');
+                        return;
+                    }
+
+                    gridEl.classList.remove('hidden');
+
+                    if (rem.expired) {
+                        cvDurationSec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-rose-50/90 dark:bg-rose-950/35 border-rose-300 dark:border-rose-800/70 pulse-expired space-y-3';
+                        pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75';
+                        dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-rose-500';
+                        labelEl.className = 'text-xs sm:text-sm font-extrabold text-rose-700 dark:text-rose-300';
+                        labelEl.textContent = '⛔ انتهت مدة الاشتراك';
+                    } else if (rem.totalHours <= 24 * 7) {
+                        cvDurationSec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-amber-50/90 dark:bg-amber-950/35 border-amber-300 dark:border-amber-700/70 pulse-warning space-y-3';
+                        pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75';
+                        dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-amber-500';
+                        labelEl.className = 'text-xs sm:text-sm font-extrabold text-amber-800 dark:text-amber-300';
+                        labelEl.textContent = '⚠️ ينتهي الاشتراك قريباً • المتبقي';
+                    } else {
+                        cvDurationSec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-emerald-50/90 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 pulse-active space-y-3';
+                        pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
+                        dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-emerald-500';
+                        labelEl.className = 'text-xs sm:text-sm font-extrabold text-emerald-800 dark:text-emerald-300';
+                        labelEl.textContent = 'الاشتراك ساري • المدة المتبقية';
+                    }
+
+                    const numColor = rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100';
+                    gridEl.innerHTML = `
+                        <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                            <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.years}</span>
+                            <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">سنة</span>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                            <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.months}</span>
+                            <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">شهر</span>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                            <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.days}</span>
+                            <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">يوم</span>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                            <span class="block text-base sm:text-lg font-extrabold mono ${rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'}">${rem.hours}</span>
+                            <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">ساعة</span>
+                        </div>
+                    `;
+                };
+
+                updateClientViewPulse();
+                if (shared.subEnd) {
+                    setInterval(updateClientViewPulse, 60000);
+                }
+            } else {
+                cvDurationSec.classList.add('hidden');
+            }
+
+            document.getElementById('cvMacValue').textContent = shared.mac;
+            document.getElementById('cvCopyMacBtn').onclick = () => copyText(shared.mac, 'تم نسخ الماك');
+
+            document.getElementById('cvKeyValue').textContent = shared.key;
+            document.getElementById('cvCopyKeyBtn').onclick = () => copyText(shared.key, 'تم نسخ الرقم السري للتطبيق');
+
+            const hostsListEl = document.getElementById('cvHostsList');
+            const validHosts = Array.isArray(shared.hosts) ? shared.hosts.filter(h => h && h.url) : [];
+
+            if (validHosts.length > 0) {
+                hostsListEl.innerHTML = validHosts.map((h, idx) => `
+                    <div class="bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div class="overflow-hidden min-w-0">
+                            <span class="text-[11px] text-amber-800 dark:text-amber-300 block font-extrabold">🌐 ${escapeHtml(h.label || ('رابط السيرفر / الهوست ' + (idx + 1)))}</span>
+                            <code class="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 mono block truncate mt-0.5" dir="ltr">${escapeHtml(h.url)}</code>
+                        </div>
+                        <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
+                            class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shrink-0 shadow-sm transition min-h-[42px]">
+                            📋 نسخ الهوست
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                hostsListEl.innerHTML = '';
+            }
+
+            if (shared.subNum) {
+                document.getElementById('cvSubNumBox').classList.remove('hidden');
+                document.getElementById('cvSubNumValue').textContent = shared.subNum;
+                document.getElementById('cvCopySubNumBtn').onclick = () => copyText(shared.subNum, 'تم نسخ رقم الاشتراك');
+            }
+
+            if (shared.subPass) {
+                document.getElementById('cvSubPassBox').classList.remove('hidden');
+                document.getElementById('cvSubPassValue').textContent = shared.subPass;
+                document.getElementById('cvCopySubPassBtn').onclick = () => copyText(shared.subPass, 'تم نسخ كلمة المرور');
+            }
+
+            if (validHosts.length === 0 && !shared.subNum && !shared.subPass) {
+                document.getElementById('cvSubSection').classList.add('hidden');
+            }
+
+            document.getElementById('cvCopyAllBtn').onclick = () => {
+                const lines = [
+                    `التطبيق: ${appInfo.label}`,
+                    `الاسم: ${shared.name}`
+                ];
+                if (shared.mac) lines.push(`MAC: ${shared.mac}`);
+                if (shared.key) lines.push(`Device Key: ${shared.key}`);
+                if (validHosts.length > 0) {
+                    validHosts.forEach((h, i) => {
+                        lines.push(`${h.label || 'Host ' + (i + 1)}: ${h.url}`);
+                    });
+                }
+                if (shared.subNum) lines.push(`Username: ${shared.subNum}`);
+                if (shared.subPass) lines.push(`Password: ${shared.subPass}`);
+                if (shared.subStart) lines.push(`بداية الاشتراك: ${formatDisplayDate(shared.subStart)}`);
+                if (shared.subEnd) lines.push(`نهاية الاشتراك: ${formatDisplayDate(shared.subEnd)}`);
+                copyText(lines.join('\n'), 'تم نسخ جميع البيانات بنجاح');
+            };
+        }
+
+        function checkRouteMode() {
+            const params = new URLSearchParams(window.location.search);
+            const encoded = params.get('c');
+
+            if (encoded) {
+                try {
+                    const raw = decodePayloadUTF8(encoded);
+                    const shared = {
+                        app: raw.a || raw.app || 'ibo',
+                        name: raw.n || raw.name || 'عميل',
+                        mac: raw.m || raw.mac || '',
+                        key: raw.k || raw.key || '',
+                        subNum: raw.u !== undefined ? raw.u : (raw.subNum || ''),
+                        subPass: raw.p !== undefined ? raw.p : (raw.subPass || ''),
+                        subStart: raw.s !== undefined ? raw.s : (raw.subStart || ''),
+                        subEnd: raw.e !== undefined ? raw.e : (raw.subEnd || ''),
+                        hosts: Array.isArray(raw.h)
+                            ? raw.h.map(item => Array.isArray(item) ? { label: item[0], url: item[1] } : item)
+                            : (raw.hosts || []),
+                        programs: Array.isArray(raw.g)
+                            ? raw.g.map(item => Array.isArray(item) ? { name: item[0], downloader: item[1], url: item[2], desc: item[3] } : item)
+                            : (raw.programs || [])
+                    };
+
+                    if (shared.name) {
+                        renderReadOnlyClientView(shared);
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Failed to parse shared client payload:', err);
+                }
+            }
+
+            syncFormRequirementsByApp();
+            initCloudSync();
+            setInterval(() => {
+                if (clients.some(c => c.subEnd)) {
+                    renderList();
+                }
+            }, 60000);
+        }
+
+        checkRouteMode();
+    </script>
+</body>
+</html>
