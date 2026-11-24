@@ -2,11 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>مدير عملاء IBO & Shamel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // تفعيل الوضع الداكن عبر فئة class في Tailwind
         tailwind.config = {
             darkMode: 'class'
         };
@@ -14,22 +13,57 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
     <style>
         html, body {
-            max-width: 100%;
-            overflow-x: hidden;
-        }
-        body {
             font-family: 'Cairo', sans-serif;
-            transition: background-color 0.25s ease, color 0.25s ease;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
         .mono {
             font-family: 'JetBrains Mono', monospace;
         }
+        @keyframes softPulseGlow {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35);
+            }
+            50% {
+                transform: scale(1.015);
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+            }
+        }
+        @keyframes warnPulseGlow {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+            }
+            50% {
+                transform: scale(1.015);
+                box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+            }
+        }
+        @keyframes dangerPulseGlow {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+            }
+            50% {
+                transform: scale(1.015);
+                box-shadow: 0 0 0 6px rgba(244, 63, 94, 0);
+            }
+        }
+        .pulse-active {
+            animation: softPulseGlow 2.4s infinite ease-in-out;
+        }
+        .pulse-warning {
+            animation: warnPulseGlow 1.8s infinite ease-in-out;
+        }
+        .pulse-expired {
+            animation: dangerPulseGlow 1.6s infinite ease-in-out;
+        }
     </style>
     <script>
-        // تطبيق الوضع الداكن فوراً قبل رسم الصفحة لتجنب الوميض
         (function() {
             try {
-                const savedTheme = localStorage.getItem('ibo_theme_mode_v1');
+                const savedTheme = localStorage.getItem('ibo_theme_mode');
                 const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                 if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
                     document.documentElement.classList.add('dark');
@@ -38,25 +72,25 @@
         })();
     </script>
 </head>
-<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen pb-12 transition-colors duration-200">
+<body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen pb-14 transition-colors duration-200">
 
     <!-- =========================================================
          وضع العميل فقط (للقراءة والنسخ بدون أي صلاحية تعديل أو إدارة)
          ========================================================= -->
     <div id="clientViewContainer" class="hidden min-h-screen flex flex-col">
         <header class="bg-indigo-700 dark:bg-slate-900 dark:border-b dark:border-slate-800 text-white shadow-md">
-            <div class="max-w-2xl mx-auto px-3 sm:px-6 py-3.5 sm:py-4 flex flex-wrap items-center justify-between gap-2.5">
-                <div class="flex items-center gap-2.5">
-                    <span class="text-xl sm:text-2xl">📺</span>
-                    <div>
-                        <h1 class="text-base sm:text-lg md:text-xl font-extrabold leading-tight">بيانات الاشتراك</h1>
-                        <p class="text-[11px] sm:text-xs text-indigo-200 dark:text-slate-400 font-semibold">صفحة مخصصة للنسخ السريع (للقراءة فقط)</p>
+            <div class="max-w-2xl mx-auto px-3 sm:px-5 py-3.5 sm:py-4 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="text-xl sm:text-2xl shrink-0">📺</span>
+                    <div class="min-w-0">
+                        <h1 class="text-base sm:text-lg font-extrabold leading-tight truncate">بيانات الاشتراك</h1>
+                        <p class="text-[11px] sm:text-xs text-indigo-200 dark:text-slate-400 font-semibold truncate">صفحة مخصصة للنسخ السريع (للقراءة فقط)</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 mr-auto sm:mr-0">
-                    <button type="button" onclick="toggleTheme()" title="تبديل الوضع الليلي/النهاري"
-                        class="theme-toggle-btn bg-white/15 hover:bg-white/25 dark:bg-slate-800 dark:hover:bg-slate-700 text-white p-2.5 sm:px-3 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 min-h-[40px]">
-                        <span class="theme-icon">🌙</span>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="toggleDarkMode()" title="تبديل الوضع الليلي"
+                        class="theme-toggle-btn bg-white/15 hover:bg-white/25 dark:bg-slate-800 dark:hover:bg-slate-700 text-white w-10 h-10 rounded-xl text-base flex items-center justify-center transition">
+                        🌙
                     </button>
                     <span id="clientViewAppBadge" class="text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-amber-400 text-slate-900 shadow-sm">
                         IBO Player
@@ -65,12 +99,12 @@
             </div>
         </header>
 
-        <main class="max-w-2xl w-full mx-auto px-3 sm:px-6 pt-5 sm:pt-7 flex-1 space-y-4">
-            <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 md:p-7 rounded-3xl shadow-sm border border-slate-200/90 dark:border-slate-800 space-y-5">
+        <main class="max-w-2xl w-full mx-auto px-3 sm:px-5 pt-5 sm:pt-7 flex-1 space-y-4">
+            <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-200/90 dark:border-slate-800 space-y-5">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
                     <div>
                         <span class="text-xs text-slate-400 dark:text-slate-400 font-bold block">مرحباً بك</span>
-                        <h2 id="cvClientName" class="text-lg sm:text-xl md:text-2xl font-extrabold text-slate-800 dark:text-slate-100 break-words">اسم العميل</h2>
+                        <h2 id="cvClientName" class="text-xl sm:text-2xl font-extrabold text-slate-800 dark:text-slate-100 break-words">اسم العميل</h2>
                     </div>
                     <a id="cvOfficialSiteBtn" href="https://iboplayer.com/device/login" target="_blank" rel="noopener noreferrer"
                         class="w-full sm:w-auto justify-center bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 min-h-[42px]">
@@ -78,16 +112,34 @@
                     </a>
                 </div>
 
+                <!-- قسم مدة الاشتراك والعداد النابض للعميل -->
+                <div id="cvDurationSection" class="hidden rounded-2xl p-3.5 sm:p-4 border transition-all space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="relative flex h-3 w-3">
+                                <span id="cvPulsePing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span id="cvPulseDot" class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                            </span>
+                            <span id="cvDurationStatusLabel" class="text-xs sm:text-sm font-extrabold">حالة الاشتراك والمدة المتبقية</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+                            <span id="cvStartDateBadge" class="hidden px-2.5 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-700/70"></span>
+                            <span id="cvEndDateBadge" class="hidden px-2.5 py-1 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-700/70"></span>
+                        </div>
+                    </div>
+                    <div id="cvCountdownGrid" class="grid grid-cols-4 gap-2 text-center"></div>
+                </div>
+
                 <div class="bg-slate-50 dark:bg-slate-800/60 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
                     <div class="flex items-center justify-between">
                         <span class="text-xs sm:text-sm font-extrabold text-indigo-800 dark:text-indigo-300">📱 بيانات التطبيق (Device Info)</span>
-                        <span class="text-[10px] sm:text-xs text-slate-400 dark:text-slate-400 font-bold">اضغط على زر النسخ</span>
+                        <span class="text-[11px] text-slate-400 font-bold">اضغط على زر النسخ</span>
                     </div>
 
-                    <div class="bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700/80 flex flex-col xs:flex-row sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                        <div class="overflow-hidden min-w-0">
-                            <span class="text-[11px] text-slate-400 dark:text-slate-400 block font-bold">الماك أدريس (MAC Address)</span>
-                            <code id="cvMacValue" class="text-sm sm:text-base font-bold text-indigo-700 dark:text-indigo-400 mono block truncate mt-0.5" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">00:00:00:00:00:00</code>
+                    <div class="bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div class="overflow-hidden">
+                            <span class="text-[11px] text-slate-400 block font-bold">الماك أدريس (MAC Address)</span>
+                            <code id="cvMacValue" class="text-sm sm:text-base font-bold text-indigo-700 dark:text-indigo-400 mono inline-block mt-0.5 break-all" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">00:00:00:00:00:00</code>
                         </div>
                         <button type="button" id="cvCopyMacBtn"
                             class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shrink-0 shadow-sm transition min-h-[42px]">
@@ -95,10 +147,10 @@
                         </button>
                     </div>
 
-                    <div class="bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700/80 flex flex-col xs:flex-row sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                        <div class="overflow-hidden min-w-0">
-                            <span class="text-[11px] text-slate-400 dark:text-slate-400 block font-bold">الرقم السري للتطبيق (Device Key)</span>
-                            <code id="cvKeyValue" class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 mono block truncate mt-0.5" dir="ltr">123456</code>
+                    <div class="bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div class="overflow-hidden">
+                            <span class="text-[11px] text-slate-400 block font-bold">الرقم السري للتطبيق (Device Key)</span>
+                            <code id="cvKeyValue" class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 mono inline-block mt-0.5 break-all" dir="ltr">123456</code>
                         </div>
                         <button type="button" id="cvCopyKeyBtn"
                             class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 active:scale-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shrink-0 shadow-sm transition min-h-[42px]">
@@ -111,10 +163,10 @@
                     <span class="text-xs sm:text-sm font-extrabold text-amber-900 dark:text-amber-300 block">🔑 بيانات السيرفر والاشتراك</span>
                     <div id="cvHostsList" class="space-y-2.5"></div>
 
-                    <div id="cvSubNumBox" class="hidden bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-amber-200/70 dark:border-amber-800/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                        <div class="overflow-hidden min-w-0">
-                            <span class="text-[11px] text-slate-400 dark:text-slate-400 block font-bold">اسم المستخدم / رقم الاشتراك (Username)</span>
-                            <code id="cvSubNumValue" class="text-sm sm:text-base font-bold text-teal-700 dark:text-teal-400 mono block truncate mt-0.5" dir="ltr"></code>
+                    <div id="cvSubNumBox" class="hidden bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-amber-200/70 dark:border-amber-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div class="overflow-hidden">
+                            <span class="text-[11px] text-slate-400 block font-bold">اسم المستخدم / رقم الاشتراك (Username)</span>
+                            <code id="cvSubNumValue" class="text-sm sm:text-base font-bold text-teal-700 dark:text-teal-400 mono inline-block mt-0.5 break-all" dir="ltr"></code>
                         </div>
                         <button type="button" id="cvCopySubNumBtn"
                             class="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shrink-0 shadow-sm transition min-h-[42px]">
@@ -122,10 +174,10 @@
                         </button>
                     </div>
 
-                    <div id="cvSubPassBox" class="hidden bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-amber-200/70 dark:border-amber-800/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                        <div class="overflow-hidden min-w-0">
-                            <span class="text-[11px] text-slate-400 dark:text-slate-400 block font-bold">كلمة المرور للاشتراك (Password)</span>
-                            <code id="cvSubPassValue" class="text-sm sm:text-base font-bold text-rose-700 dark:text-rose-400 mono block truncate mt-0.5" dir="ltr"></code>
+                    <div id="cvSubPassBox" class="hidden bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-amber-200/70 dark:border-amber-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div class="overflow-hidden">
+                            <span class="text-[11px] text-slate-400 block font-bold">كلمة المرور للاشتراك (Password)</span>
+                            <code id="cvSubPassValue" class="text-sm sm:text-base font-bold text-rose-700 dark:text-rose-400 mono inline-block mt-0.5 break-all" dir="ltr"></code>
                         </div>
                         <button type="button" id="cvCopySubPassBtn"
                             class="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shrink-0 shadow-sm transition min-h-[42px]">
@@ -135,12 +187,12 @@
                 </div>
 
                 <button type="button" id="cvCopyAllBtn"
-                    class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-extrabold py-3.5 rounded-2xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2 min-h-[46px]">
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-extrabold py-3.5 rounded-2xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2 min-h-[48px]">
                     <span>📄 نسخ جميع البيانات كنص واحد</span>
                 </button>
             </div>
 
-            <p class="text-center text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 pb-4">
+            <p class="text-center text-xs text-slate-400 dark:text-slate-500 px-2">
                 هذه الصفحة مخصصة لعرض ونسخ بيانات اشتراكك بأمان ولا يمكن تعديل البيانات منها.
             </p>
         </main>
@@ -151,32 +203,32 @@
          ========================================================= -->
     <div id="adminViewContainer">
         <!-- الهيدر -->
-        <header class="bg-indigo-700 dark:bg-slate-900 dark:border-b dark:border-slate-800 text-white shadow-md sticky top-0 z-20 transition-colors">
-            <div class="max-w-5xl mx-auto px-3 sm:px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
-                <div class="flex flex-wrap items-center justify-between md:justify-start gap-2">
+        <header class="bg-indigo-700 dark:bg-slate-900 dark:border-b dark:border-slate-800 text-white shadow-md sticky top-0 z-20">
+            <div class="max-w-5xl mx-auto px-3 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div class="flex flex-wrap items-center justify-between sm:justify-start gap-2">
                     <div class="flex items-center gap-2">
-                        <h1 class="text-base sm:text-lg md:text-xl font-extrabold">مدير عملاء IPTV</h1>
-                        <span id="cloudStatus" class="text-[10px] sm:text-[11px] bg-indigo-800/80 dark:bg-slate-800 text-indigo-100 dark:text-slate-300 px-2.5 py-0.5 rounded-full font-bold">
+                        <h1 class="text-base sm:text-lg font-extrabold">مدير عملاء IPTV</h1>
+                        <span id="cloudStatus" class="text-[11px] bg-indigo-800/80 dark:bg-slate-800 text-indigo-100 px-2.5 py-0.5 rounded-full font-bold">
                             جاري الربط...
                         </span>
                     </div>
                     <button type="button" onclick="forceSyncNow()"
-                        class="text-[11px] sm:text-xs bg-white/15 hover:bg-white/25 dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-3 py-1.5 rounded-full font-bold transition min-h-[34px]">
+                        class="text-[11px] sm:text-xs bg-white/15 hover:bg-white/25 dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-3 py-1.5 rounded-full font-bold transition min-h-[32px]">
                         🔄 مزامنة الآن
                     </button>
                 </div>
-                <div class="grid grid-cols-3 md:flex items-center gap-2 w-full md:w-auto">
-                    <button type="button" onclick="toggleTheme()" title="تبديل الوضع الليلي/النهاري"
-                        class="theme-toggle-btn bg-white/15 hover:bg-white/25 dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-2.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 min-h-[38px]">
-                        <span class="theme-icon">🌙</span>
-                        <span class="theme-label truncate">الوضع الليلي</span>
+                <div class="grid grid-cols-3 sm:flex items-center gap-2 w-full sm:w-auto">
+                    <button type="button" onclick="toggleDarkMode()" title="تبديل الوضع الليلي"
+                        class="theme-toggle-btn bg-white/15 hover:bg-white/25 dark:bg-slate-800 dark:hover:bg-slate-700 text-white px-3 py-2 rounded-xl text-xs font-extrabold shadow-sm transition flex items-center justify-center gap-1 min-h-[38px]">
+                        <span>🌙</span>
+                        <span class="sm:hidden text-[11px]">الوضع</span>
                     </button>
                     <a href="https://iboplayer.com/device/login" target="_blank" rel="noopener noreferrer"
-                        class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-2.5 sm:px-3.5 py-2 rounded-xl text-xs shadow transition text-center flex items-center justify-center min-h-[38px]">
+                        class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-3 py-2 rounded-xl text-xs shadow transition text-center flex items-center justify-center min-h-[38px]">
                         موقع IBO ↗
                     </a>
                     <a href="http://shamel.tv/" target="_blank" rel="noopener noreferrer"
-                        class="bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-extrabold px-2.5 sm:px-3.5 py-2 rounded-xl text-xs shadow transition text-center flex items-center justify-center min-h-[38px]">
+                        class="bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-extrabold px-3 py-2 rounded-xl text-xs shadow transition text-center flex items-center justify-center min-h-[38px]">
                         موقع Shamel ↗
                     </a>
                 </div>
@@ -185,15 +237,15 @@
             <div id="errorBanner" class="hidden bg-rose-600 text-white text-xs font-bold px-4 py-2 text-center"></div>
         </header>
 
-        <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 space-y-5">
+        <main class="max-w-5xl mx-auto px-3 sm:px-5 pt-4 sm:pt-6 space-y-5">
 
             <!-- قسم هوستات اليوم -->
-            <section class="bg-amber-50 dark:bg-amber-950/25 p-4 sm:p-5 rounded-2xl shadow-sm border border-amber-200/90 dark:border-amber-800/50 space-y-3">
+            <section class="bg-amber-50 dark:bg-amber-950/25 p-4 sm:p-5 rounded-2xl shadow-sm border border-amber-200/90 dark:border-amber-800/50 space-y-3.5">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <div class="flex items-center gap-2.5">
-                        <span class="text-lg sm:text-xl">🌐</span>
+                        <span class="text-xl">🌐</span>
                         <div>
-                            <h2 class="text-xs sm:text-sm md:text-base font-extrabold text-amber-950 dark:text-amber-300">هوستات اليوم (Daily Hosts)</h2>
+                            <h2 class="text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-300">هوستات اليوم (Daily Hosts)</h2>
                             <p class="text-[11px] sm:text-xs text-amber-800/80 dark:text-amber-200/70">تظهر جميع الهوستات المضافة هنا تلقائياً داخل بطاقة كل عميل وعند مشاركة الرابط</p>
                         </div>
                     </div>
@@ -204,16 +256,16 @@
 
                 <form onsubmit="addDailyHost(event)" class="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                     <input type="text" id="hostLabelInput" placeholder="اسم الهوست (اختياري)"
-                        class="md:col-span-4 px-3.5 py-2.5 rounded-xl border border-amber-300/80 dark:border-amber-800/70 focus:border-amber-500 outline-none text-xs sm:text-sm bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 min-h-[42px]">
+                        class="md:col-span-4 px-3.5 py-2.5 rounded-xl border border-amber-300/80 dark:border-amber-800/60 focus:border-amber-500 outline-none text-xs sm:text-sm bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 min-h-[42px]">
                     <input type="text" id="hostUrlInput" required dir="ltr" placeholder="http://example.com:8080"
-                        class="md:col-span-6 px-3.5 py-2.5 rounded-xl border border-amber-300/80 dark:border-amber-800/70 focus:border-amber-500 outline-none text-xs sm:text-sm mono text-left bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 min-h-[42px]">
+                        class="md:col-span-6 px-3.5 py-2.5 rounded-xl border border-amber-300/80 dark:border-amber-800/60 focus:border-amber-500 outline-none text-xs sm:text-sm mono text-left bg-white dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 min-h-[42px]">
                     <button type="submit"
                         class="md:col-span-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition min-h-[42px]">
                         + إضافة
                     </button>
                 </form>
 
-                <div id="hostsListContainer" class="space-y-2"></div>
+                <div id="hostsListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
             </section>
 
             <!-- قسم النسخ الاحتياطي + الرقم السري الخاص -->
@@ -222,16 +274,16 @@
                     <div class="flex items-center gap-2.5">
                         <span class="text-lg">💾</span>
                         <div>
-                            <h2 class="text-xs sm:text-sm md:text-base font-extrabold text-slate-700 dark:text-slate-200">النسخ الاحتياطي الكامل</h2>
-                            <p class="text-[11px] sm:text-xs text-slate-400 dark:text-slate-400">حفظ أو استعادة جميع العملاء (IBO و Shamel) مع الهوستات والرقم السري</p>
+                            <h2 class="text-xs sm:text-sm font-extrabold text-slate-700 dark:text-slate-200">النسخ الاحتياطي الكامل</h2>
+                            <p class="text-[11px] sm:text-xs text-slate-400">حفظ أو استعادة جميع العملاء (IBO و Shamel) مع الهوستات والرقم السري</p>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 md:flex items-center gap-2 w-full md:w-auto">
+                    <div class="grid grid-cols-2 sm:flex items-center gap-2 w-full md:w-auto">
                         <button type="button" onclick="exportBackup()"
-                            class="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-sm min-h-[42px]">
+                            class="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm min-h-[42px]">
                             <span>⬇ تصدير نسخة</span>
                         </button>
-                        <label class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/70 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition cursor-pointer flex items-center justify-center gap-1.5 min-h-[42px]">
+                        <label class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5 min-h-[42px]">
                             <span>⬆ استيراد نسخة</span>
                             <input type="file" id="importFileInput" accept=".json" onchange="importBackup(event)" class="hidden">
                         </label>
@@ -243,19 +295,19 @@
                         <span class="text-lg">🔒</span>
                         <div>
                             <span class="text-xs sm:text-sm font-extrabold text-slate-700 dark:text-slate-200 block">الرقم السري الخاص بي (قفل البيانات)</span>
-                            <span class="text-[11px] sm:text-xs text-slate-400 dark:text-slate-400">يُحفظ في النسخة الاحتياطية ويظهر لنسخه بسهولة في IBO و Shamel</span>
+                            <span class="text-[11px] sm:text-xs text-slate-400">يُحفظ في النسخة الاحتياطية ويظهر لنسخه بسهولة في IBO و Shamel</span>
                         </div>
                     </div>
-                    <form onsubmit="savePersonalPin(event)" class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full md:w-auto">
+                    <form onsubmit="savePersonalPin(event)" class="grid grid-cols-12 sm:flex items-center gap-2 w-full md:w-auto">
                         <input type="text" id="personalPinInput" dir="ltr" placeholder="0000"
-                            class="w-full sm:w-32 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-purple-500 outline-none text-sm mono font-bold text-center bg-slate-50 dark:bg-slate-800 dark:text-slate-100 min-h-[42px]">
+                            class="col-span-5 sm:w-32 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-purple-500 outline-none text-sm mono font-bold text-center bg-slate-50 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[42px]">
                         <button type="submit"
-                            class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm transition min-h-[42px]">
+                            class="col-span-3 sm:w-auto bg-slate-700 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shrink-0 min-h-[42px]">
                             حفظ
                         </button>
                         <button type="button" id="copyPersonalPinBtn" onclick="copyPersonalPin()"
-                            class="flex-1 sm:flex-none bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-1 min-h-[42px]">
-                            <span>📋 نسخ الرقم السري</span>
+                            class="col-span-4 sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-sm transition shrink-0 flex items-center justify-center gap-1 min-h-[42px]">
+                            <span>📋 نسخ السري</span>
                         </button>
                     </form>
                 </div>
@@ -265,14 +317,14 @@
             <section class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800">
                 <div class="flex items-center justify-between mb-3.5">
                     <h2 id="formTitle" class="text-sm sm:text-base font-extrabold text-slate-700 dark:text-slate-200">إضافة عميل جديد</h2>
-                    <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:underline px-2 py-1">
+                    <button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="hidden text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:underline py-1 px-2">
                         إلغاء التعديل ✕
                     </button>
                 </div>
                 <form id="clientForm" onsubmit="saveClient(event)" class="space-y-4">
                     <input type="hidden" id="editIdInput" value="">
                     
-                    <div class="bg-indigo-50/60 dark:bg-indigo-950/25 p-3.5 sm:p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/50 space-y-3">
+                    <div class="bg-indigo-50/60 dark:bg-indigo-950/30 p-3.5 sm:p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/50 space-y-3">
                         <div class="text-xs sm:text-sm font-extrabold text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
                             <span>📱 بيانات العميل (التطبيق)</span>
                         </div>
@@ -280,7 +332,7 @@
                             <div>
                                 <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">القسم / التطبيق</label>
                                 <select id="appInput"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm font-bold bg-white dark:bg-slate-800 dark:text-slate-100 min-h-[44px]">
+                                    class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none text-sm font-bold bg-white dark:bg-slate-800 dark:text-slate-100 min-h-[44px]">
                                     <option value="ibo">قسم IBO Player</option>
                                     <option value="shamel">قسم Shamel TV</option>
                                 </select>
@@ -305,10 +357,10 @@
                         </div>
                     </div>
 
-                    <div class="bg-amber-50/60 dark:bg-amber-950/25 p-3.5 sm:p-4 rounded-xl border border-amber-200/70 dark:border-amber-800/50 space-y-3">
+                    <div class="bg-amber-50/60 dark:bg-amber-950/20 p-3.5 sm:p-4 rounded-xl border border-amber-200/70 dark:border-amber-800/40 space-y-3">
                         <div class="flex flex-wrap items-center justify-between gap-1">
                             <span class="text-xs sm:text-sm font-extrabold text-amber-900 dark:text-amber-300">🔑 بيانات الاشتراك (مع هوستات اليوم)</span>
-                            <span class="text-[11px] sm:text-xs text-amber-700 dark:text-amber-400/80 font-semibold">الهوست يُضاف تلقائياً من الأعلى</span>
+                            <span class="text-[11px] text-amber-700 dark:text-amber-400/80 font-semibold">الهوست يُضاف تلقائياً من الأعلى</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
@@ -322,11 +374,36 @@
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-amber-500 outline-none text-sm mono text-left bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 min-h-[44px]">
                             </div>
                         </div>
+
+                        <!-- حقول بداية ونهاية الاشتراك + أزرار اختصار سريعة -->
+                        <div class="pt-2 border-t border-amber-200/60 dark:border-amber-800/40 space-y-2.5">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="text-xs font-bold text-amber-900 dark:text-amber-300">📅 مدة الاشتراك (البداية والنهاية)</span>
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <button type="button" onclick="applyQuickDuration(1)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-200/80 hover:bg-amber-300 dark:bg-amber-900/60 dark:hover:bg-amber-800/70 text-amber-950 dark:text-amber-200 transition">+ شهر</button>
+                                    <button type="button" onclick="applyQuickDuration(3)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-200/80 hover:bg-amber-300 dark:bg-amber-900/60 dark:hover:bg-amber-800/70 text-amber-950 dark:text-amber-200 transition">+ 3 أشهر</button>
+                                    <button type="button" onclick="applyQuickDuration(6)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-200/80 hover:bg-amber-300 dark:bg-amber-900/60 dark:hover:bg-amber-800/70 text-amber-950 dark:text-amber-200 transition">+ 6 أشهر</button>
+                                    <button type="button" onclick="applyQuickDuration(12)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-900 dark:text-emerald-300 transition">+ سنة كاملة</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">تاريخ بداية الاشتراك</label>
+                                    <input type="datetime-local" id="subStartInput" dir="ltr"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-amber-500 outline-none text-sm mono bg-white dark:bg-slate-800 dark:text-slate-100 min-h-[44px]">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">تاريخ نهاية الاشتراك</label>
+                                    <input type="datetime-local" id="subEndInput" dir="ltr"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-amber-500 outline-none text-sm mono bg-white dark:bg-slate-800 dark:text-slate-100 min-h-[44px]">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
                         <button type="submit" id="submitBtn"
-                            class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-3 rounded-xl text-sm sm:text-base shadow-sm transition min-h-[46px]">
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-3 rounded-xl text-sm shadow-sm transition min-h-[46px]">
                             + حفظ العميل
                         </button>
                     </div>
@@ -337,32 +414,32 @@
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
                 <div class="md:col-span-6">
                     <input type="text" id="searchInput" oninput="renderList()" placeholder="🔍 ابحث بالاسم أو الماك أو رقم الاشتراك..."
-                        class="w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none text-sm shadow-sm dark:text-slate-100 dark:placeholder-slate-500 min-h-[46px]">
+                        class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none text-sm dark:text-slate-100 dark:placeholder-slate-500 shadow-sm min-h-[46px]">
                 </div>
                 
-                <div class="md:col-span-6 grid grid-cols-2 gap-2 bg-slate-200/70 dark:bg-slate-900 p-1.5 rounded-2xl border border-transparent dark:border-slate-800">
+                <div class="md:col-span-6 grid grid-cols-2 gap-2 bg-slate-200/70 dark:bg-slate-800/80 p-1.5 rounded-2xl">
                     <button type="button" onclick="setSection('ibo')" id="tab-ibo"
-                        class="py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-1.5 min-h-[42px]">
+                        class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-1.5 min-h-[40px]">
                         <span>قسم IBO Player</span>
                         <span id="count-ibo" class="bg-slate-900/15 px-2 py-0.5 rounded-full text-xs">0</span>
                     </button>
                     <button type="button" onclick="setSection('shamel')" id="tab-shamel"
-                        class="py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800 transition flex items-center justify-center gap-1.5 min-h-[42px]">
+                        class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1.5 min-h-[40px]">
                         <span>قسم Shamel.tv</span>
-                        <span id="count-shamel" class="bg-slate-300/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full text-xs">0</span>
+                        <span id="count-shamel" class="bg-slate-300/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-2 py-0.5 rounded-full text-xs">0</span>
                     </button>
                 </div>
             </div>
 
             <div id="sectionHeader" class="flex flex-wrap items-center justify-between gap-2 px-1">
-                <h3 id="activeSectionTitle" class="text-sm sm:text-base md:text-lg font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <h3 id="activeSectionTitle" class="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
                     عملاء قسم IBO Player فقط
                 </h3>
                 <span id="activeSectionSubtitle" class="text-xs font-bold text-slate-500 dark:text-slate-400">يظهر هنا عملاء IBO فقط</span>
             </div>
 
-            <section id="clientsList" class="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4"></section>
+            <section id="clientsList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></section>
 
             <div id="emptyMsg" class="hidden text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-sm">
                 لا يوجد عملاء محفوظون في هذا القسم حالياً
@@ -372,7 +449,7 @@
     </div>
 
     <!-- إشعار النسخ -->
-    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 max-w-[92vw] text-center bg-slate-900 dark:bg-slate-800 dark:border dark:border-slate-700 text-white px-5 py-3 rounded-2xl sm:rounded-full text-xs sm:text-sm font-bold shadow-lg opacity-0 pointer-events-none transition-opacity duration-200 z-50">
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 dark:bg-indigo-600 text-white px-5 py-3 rounded-full text-xs sm:text-sm font-bold shadow-lg opacity-0 pointer-events-none transition-opacity duration-200 z-50 max-w-[90vw] text-center">
         تم النسخ!
     </div>
 
@@ -381,31 +458,29 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // إدارة الوضع الليلي (الداكن) والنهاري
-        const THEME_STORAGE_KEY = 'ibo_theme_mode_v1';
-
-        function updateThemeToggleUI() {
+        // إدارة النظام الداكن الليلي
+        function updateThemeIcons() {
             const isDark = document.documentElement.classList.contains('dark');
-            document.querySelectorAll('.theme-icon').forEach(el => {
-                el.textContent = isDark ? '☀️' : '🌙';
-            });
-            document.querySelectorAll('.theme-label').forEach(el => {
-                el.textContent = isDark ? 'الوضع النهاري' : 'الوضع الليلي';
+            document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+                if (btn.querySelector('span')) {
+                    btn.querySelector('span').textContent = isDark ? '☀️' : '🌙';
+                } else {
+                    btn.textContent = isDark ? '☀️' : '🌙';
+                }
             });
         }
 
-        window.toggleTheme = function() {
+        window.toggleDarkMode = function() {
             const htmlEl = document.documentElement;
             const isDark = htmlEl.classList.toggle('dark');
-            try {
-                localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
-            } catch (e) {}
-            updateThemeToggleUI();
+            safeSetStorage('ibo_theme_mode', isDark ? 'dark' : 'light');
+            updateThemeIcons();
+            showToast(isDark ? '🌙 تم تفعيل الوضع الليلي' : '☀️ تم تفعيل الوضع النهاري');
         };
 
-        updateThemeToggleUI();
+        updateThemeIcons();
 
-        // إعدادات مشروع السحابة الجديدة: Vulture-App (vulture-app-1efba)
+        // إعدادات مشروع السحابة: Vulture-App (vulture-app-1efba)
         const defaultFirebaseConfig = {
             apiKey: "AIzaSyBwFpJ75HQ-NyLDH9GGS6bhyvIE8PRzl-ug",
             authDomain: "vulture-app-1efba.firebaseapp.com",
@@ -463,14 +538,14 @@
                 label: 'IBO Player',
                 url: 'https://iboplayer.com/device/login',
                 btnText: 'نسخ الماك وفتح IBO ↗',
-                badgeClass: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700/60',
+                badgeClass: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700/50',
                 btnClass: 'bg-amber-400 hover:bg-amber-300 text-slate-900'
             },
             shamel: {
                 label: 'Shamel TV',
                 url: 'http://shamel.tv/',
                 btnText: 'نسخ الماك وفتح Shamel ↗',
-                badgeClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60',
+                badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700/50',
                 btnClass: 'bg-emerald-400 hover:bg-emerald-300 text-slate-900'
             }
         };
@@ -517,7 +592,6 @@
                 : 'text-[11px] bg-rose-500/30 text-amber-100 border border-rose-300/40 px-2.5 py-0.5 rounded-full font-bold';
         }
 
-        // محاولة تسجيل الدخول إن كان مفعلاً دون تعطيل الاتصال إذا كان غير مفعّل
         async function tryOptionalAuth() {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -551,25 +625,25 @@
             if (!container) return;
 
             if (dailyHosts.length === 0) {
-                container.innerHTML = '<div class="text-center py-2 text-xs text-amber-800/70 dark:text-amber-300/70">لا توجد هوستات مضافة حالياً، أضف هوست اليوم بالأعلى ليظهر لكل عميل</div>';
+                container.innerHTML = '<div class="md:col-span-2 text-center py-2.5 text-xs text-amber-800/70 dark:text-amber-300/60">لا توجد هوستات مضافة حالياً، أضف هوست اليوم بالأعلى ليظهر لكل عميل</div>';
                 return;
             }
 
             container.innerHTML = dailyHosts.map((h, idx) => `
-                <div class="bg-white/90 dark:bg-slate-900/90 px-3 py-2.5 rounded-xl border border-amber-200/80 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="bg-white/90 dark:bg-slate-900/90 px-3 py-2.5 rounded-xl border border-amber-200/80 dark:border-amber-800/50 flex items-center justify-between gap-2">
                     <div class="overflow-hidden flex items-center gap-2 min-w-0">
-                        <span class="text-[11px] font-extrabold bg-amber-100 dark:bg-amber-900/50 text-amber-900 dark:text-amber-300 px-2.5 py-1 rounded-lg shrink-0">
+                        <span class="text-[11px] font-extrabold bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-lg shrink-0">
                             ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}
                         </span>
-                        <code class="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 mono truncate" dir="ltr">${escapeHtml(h.url)}</code>
+                        <code class="text-xs font-bold text-slate-800 dark:text-slate-100 mono truncate" dir="ltr">${escapeHtml(h.url)}</code>
                     </div>
-                    <div class="grid grid-cols-2 sm:flex items-center gap-1.5 shrink-0">
+                    <div class="flex items-center gap-1.5 shrink-0">
                         <button type="button" onclick="copyText('${escapeHtml(h.url)}', 'تم نسخ الهوست')"
-                            class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition min-h-[36px]">
+                            class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition min-h-[34px]">
                             نسخ
                         </button>
                         <button type="button" onclick="deleteDailyHost('${h.id}')"
-                            class="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold px-3 py-1.5 rounded-lg text-xs transition min-h-[36px]">
+                            class="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold px-2.5 py-1.5 rounded-lg text-xs transition min-h-[34px]">
                             حذف
                         </button>
                     </div>
@@ -609,7 +683,7 @@
             if (copyBtn) {
                 copyBtn.innerHTML = personalPin
                     ? `<span>📋 نسخ (${escapeHtml(personalPin)})</span>`
-                    : `<span>📋 نسخ الرقم السري</span>`;
+                    : `<span>📋 نسخ السري</span>`;
             }
         }
 
@@ -660,7 +734,6 @@
             await syncHostsToCloud();
         };
 
-        // مزامنة يدوية فورية لرفع المحلي وجلب السحابي
         window.forceSyncNow = async function() {
             showToast('جاري المزامنة مع سحابة Vulture...');
             try {
@@ -682,6 +755,8 @@
                             key: localItem.key,
                             subNum: localItem.subNum || '',
                             subPass: localItem.subPass || '',
+                            subStart: localItem.subStart || '',
+                            subEnd: localItem.subEnd || '',
                             createdAt: Number(localItem.createdAt) || Date.now()
                         });
                         uploaded++;
@@ -758,6 +833,8 @@
                             key: item.key,
                             subNum: item.subNum || '',
                             subPass: item.subPass || '',
+                            subStart: item.subStart || '',
+                            subEnd: item.subEnd || '',
                             createdAt: Number(item.createdAt) || Date.now()
                         });
                     }
@@ -789,16 +866,14 @@
             const subEl = document.getElementById('activeSectionSubtitle');
             const appSelect = document.getElementById('appInput');
 
-            const inactiveTabClass = 'py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800 transition flex items-center justify-center gap-1.5 min-h-[42px]';
-
             if (section === 'ibo') {
-                tabIbo.className = 'py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-1.5 min-h-[42px]';
-                tabShamel.className = inactiveTabClass;
+                tabIbo.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-400 text-slate-900 shadow-sm transition flex items-center justify-center gap-1.5 min-h-[40px]';
+                tabShamel.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1.5 min-h-[40px]';
                 titleEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> عملاء قسم IBO Player فقط';
                 subEl.textContent = 'يظهر هنا عملاء IBO فقط';
             } else {
-                tabShamel.className = 'py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 text-white shadow-sm transition flex items-center justify-center gap-1.5 min-h-[42px]';
-                tabIbo.className = inactiveTabClass;
+                tabShamel.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500 text-white shadow-sm transition flex items-center justify-center gap-1.5 min-h-[40px]';
+                tabIbo.className = 'py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition flex items-center justify-center gap-1.5 min-h-[40px]';
                 titleEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> عملاء قسم Shamel.tv فقط';
                 subEl.textContent = 'يظهر هنا عملاء Shamel.tv فقط';
             }
@@ -833,12 +908,14 @@
             document.getElementById('keyInput').value = client.key;
             document.getElementById('subNumInput').value = client.subNum || '';
             document.getElementById('subPassInput').value = client.subPass || '';
+            document.getElementById('subStartInput').value = client.subStart || '';
+            document.getElementById('subEndInput').value = client.subEnd || '';
 
             document.getElementById('formTitle').textContent = 'تعديل بيانات العميل: ' + client.name;
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.textContent = '✓ حفظ التعديلات';
-            submitBtn.className = 'w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-sm shadow-sm transition';
+            submitBtn.className = 'w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-3 rounded-xl text-sm shadow-sm transition min-h-[46px]';
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
@@ -851,13 +928,159 @@
             document.getElementById('keyInput').value = '';
             document.getElementById('subNumInput').value = '';
             document.getElementById('subPassInput').value = '';
+            document.getElementById('subStartInput').value = '';
+            document.getElementById('subEndInput').value = '';
 
             document.getElementById('formTitle').textContent = 'إضافة عميل جديد';
             document.getElementById('cancelEditBtn').classList.add('hidden');
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.textContent = '+ حفظ العميل';
-            submitBtn.className = 'w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-sm shadow-sm transition';
+            submitBtn.className = 'w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-3 rounded-xl text-sm shadow-sm transition min-h-[46px]';
         };
+
+        function toLocalDateTimeInput(dateObj) {
+            const pad = n => String(n).padStart(2, '0');
+            return `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
+        }
+
+        window.applyQuickDuration = function(months) {
+            const startInput = document.getElementById('subStartInput');
+            const endInput = document.getElementById('subEndInput');
+            let startDate = startInput.value ? new Date(startInput.value) : new Date();
+            if (isNaN(startDate.getTime())) startDate = new Date();
+            if (!startInput.value) {
+                startInput.value = toLocalDateTimeInput(startDate);
+            }
+            const endDate = new Date(startDate.getTime());
+            endDate.setMonth(endDate.getMonth() + months);
+            endInput.value = toLocalDateTimeInput(endDate);
+        };
+
+        function calculateRemainingBreakdown(endStr) {
+            if (!endStr) return null;
+            const end = new Date(endStr);
+            if (isNaN(end.getTime())) return null;
+
+            const now = new Date();
+            const diffMs = end.getTime() - now.getTime();
+
+            if (diffMs <= 0) {
+                return { expired: true, years: 0, months: 0, days: 0, hours: 0, totalHours: 0 };
+            }
+
+            let cursor = new Date(now.getTime());
+            let years = 0;
+            while (true) {
+                const nextYear = new Date(cursor.getTime());
+                nextYear.setFullYear(nextYear.getFullYear() + 1);
+                if (nextYear <= end) {
+                    years++;
+                    cursor = nextYear;
+                } else {
+                    break;
+                }
+            }
+
+            let months = 0;
+            while (true) {
+                const nextMonth = new Date(cursor.getTime());
+                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                if (nextMonth <= end) {
+                    months++;
+                    cursor = nextMonth;
+                } else {
+                    break;
+                }
+            }
+
+            const remMs = Math.max(0, end.getTime() - cursor.getTime());
+            const days = Math.floor(remMs / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((remMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+            return { expired: false, years, months, days, hours, totalHours };
+        }
+
+        function formatDisplayDate(dtStr) {
+            if (!dtStr) return '';
+            const d = new Date(dtStr);
+            if (isNaN(d.getTime())) return dtStr;
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} - ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        function buildPulseBadgeHtml(subStart, subEnd) {
+            if (!subStart && !subEnd) return '';
+            const rem = calculateRemainingBreakdown(subEnd);
+
+            let containerStyle = 'bg-emerald-50/90 dark:bg-emerald-950/35 border-emerald-200 dark:border-emerald-800/60 pulse-active';
+            let dotColor = 'bg-emerald-500';
+            let pingColor = 'bg-emerald-400';
+            let statusText = 'الاشتراك ساري • المتبقي';
+            let titleColor = 'text-emerald-800 dark:text-emerald-300';
+
+            if (rem) {
+                if (rem.expired) {
+                    containerStyle = 'bg-rose-50/95 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800/70 pulse-expired';
+                    dotColor = 'bg-rose-500';
+                    pingColor = 'bg-rose-400';
+                    statusText = '⛔ الاشتراك منتهي';
+                    titleColor = 'text-rose-700 dark:text-rose-300';
+                } else if (rem.totalHours <= 24 * 7) {
+                    containerStyle = 'bg-amber-50/95 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/70 pulse-warning';
+                    dotColor = 'bg-amber-500';
+                    pingColor = 'bg-amber-400';
+                    statusText = '⚠️ ينتهي قريباً • المتبقي';
+                    titleColor = 'text-amber-800 dark:text-amber-300';
+                }
+            } else {
+                containerStyle = 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700';
+                dotColor = 'bg-indigo-500';
+                pingColor = 'bg-indigo-400';
+                statusText = '📅 سجل تواريخ الاشتراك';
+                titleColor = 'text-slate-700 dark:text-slate-200';
+            }
+
+            const cellsHtml = rem ? `
+                <div class="grid grid-cols-4 gap-1.5 text-center pt-1">
+                    <div class="bg-white/90 dark:bg-slate-900/90 rounded-xl py-1.5 px-1 border border-black/5 dark:border-white/5">
+                        <span class="block text-sm sm:text-base font-extrabold mono ${rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'}">${rem.years}</span>
+                        <span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400">سنة</span>
+                    </div>
+                    <div class="bg-white/90 dark:bg-slate-900/90 rounded-xl py-1.5 px-1 border border-black/5 dark:border-white/5">
+                        <span class="block text-sm sm:text-base font-extrabold mono ${rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'}">${rem.months}</span>
+                        <span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400">شهر</span>
+                    </div>
+                    <div class="bg-white/90 dark:bg-slate-900/90 rounded-xl py-1.5 px-1 border border-black/5 dark:border-white/5">
+                        <span class="block text-sm sm:text-base font-extrabold mono ${rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'}">${rem.days}</span>
+                        <span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400">يوم</span>
+                    </div>
+                    <div class="bg-white/90 dark:bg-slate-900/90 rounded-xl py-1.5 px-1 border border-black/5 dark:border-white/5">
+                        <span class="block text-sm sm:text-base font-extrabold mono ${rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'}">${rem.hours}</span>
+                        <span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400">ساعة</span>
+                    </div>
+                </div>
+            ` : '';
+
+            return `
+                <div class="rounded-xl p-3 border ${containerStyle} space-y-2 transition-all">
+                    <div class="flex flex-wrap items-center justify-between gap-1.5">
+                        <div class="flex items-center gap-2">
+                            <span class="relative flex h-2.5 w-2.5 shrink-0">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full ${pingColor} opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 ${dotColor}"></span>
+                            </span>
+                            <span class="text-[11px] sm:text-xs font-extrabold ${titleColor}">${statusText}</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                            ${subStart ? `<span class="bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700/60" dir="ltr">🟢 ${escapeHtml(formatDisplayDate(subStart))}</span>` : ''}
+                            ${subEnd ? `<span class="bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700/60" dir="ltr">🔴 ${escapeHtml(formatDisplayDate(subEnd))}</span>` : ''}
+                        </div>
+                    </div>
+                    ${cellsHtml}
+                </div>
+            `;
+        }
 
         window.saveClient = async function(e) {
             e.preventDefault();
@@ -868,12 +1091,14 @@
             const key = document.getElementById('keyInput').value.trim();
             const subNum = document.getElementById('subNumInput').value.trim();
             const subPass = document.getElementById('subPassInput').value.trim();
+            const subStart = document.getElementById('subStartInput').value;
+            const subEnd = document.getElementById('subEndInput').value;
             if (!name || !mac || !key) return;
 
             if (editId) {
                 const idx = clients.findIndex(c => String(c.id) === String(editId));
                 if (idx !== -1) {
-                    clients[idx] = { ...clients[idx], app: appType, name, mac, key, subNum, subPass };
+                    clients[idx] = { ...clients[idx], app: appType, name, mac, key, subNum, subPass, subStart, subEnd };
                     saveLocalBackup();
                 }
                 setSection(appType);
@@ -882,7 +1107,7 @@
                 if (!String(editId).startsWith('local_')) {
                     try {
                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', String(editId)), {
-                            app: appType, name, mac, key, subNum, subPass
+                            app: appType, name, mac, key, subNum, subPass, subStart, subEnd
                         });
                         showToast('✓ تم التعديل في سحابة Vulture والجهاز');
                     } catch (err) {
@@ -904,6 +1129,8 @@
                     key,
                     subNum,
                     subPass,
+                    subStart,
+                    subEnd,
                     createdAt
                 };
 
@@ -920,6 +1147,8 @@
                         key,
                         subNum,
                         subPass,
+                        subStart,
+                        subEnd,
                         createdAt
                     });
                     const localIdx = clients.findIndex(c => c.id === tempId);
@@ -1006,7 +1235,7 @@
                 const appInfo = APP_CONFIG[c.app || 'ibo'];
                 const hostsHtml = dailyHosts.length > 0
                     ? dailyHosts.map((h, idx) => `
-                        <div class="bg-white/90 dark:bg-slate-900 p-2.5 rounded-xl border border-amber-200/80 dark:border-amber-800/50 flex flex-col xs:flex-row sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                        <div class="bg-white/90 dark:bg-slate-900/90 p-2.5 rounded-xl border border-amber-200/80 dark:border-amber-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div class="overflow-hidden min-w-0">
                                 <span class="text-[10px] text-amber-800 dark:text-amber-300 block font-extrabold">🌐 ${escapeHtml(h.label || ('هوست ' + (idx + 1)))}</span>
                                 <code class="text-xs font-bold text-slate-800 dark:text-slate-100 mono block truncate" dir="ltr">${escapeHtml(h.url)}</code>
@@ -1017,35 +1246,34 @@
                             </button>
                         </div>
                     `).join('')
-                    : '<div class="text-[11px] text-amber-800/70 dark:text-amber-300/70 px-1">لا يوجد هوست مضاف بالأعلى حالياً</div>';
+                    : '<div class="text-[11px] text-amber-800/70 dark:text-amber-300/60 px-1">لا يوجد هوست مضاف بالأعلى حالياً</div>';
 
                 const hasSubDetails = c.subNum || c.subPass;
                 const isLocalOnly = String(c.id).startsWith('local_');
+                const pulseDurationHtml = buildPulseBadgeHtml(c.subStart, c.subEnd);
 
                 return `
                 <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between gap-3.5">
-                    <div class="flex flex-col gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <div class="flex items-center gap-2 min-w-0">
-                                <span class="font-extrabold text-slate-800 dark:text-slate-100 text-base sm:text-lg truncate">${escapeHtml(c.name)}</span>
-                                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-lg border shrink-0 ${appInfo.badgeClass}">
-                                    ${appInfo.label}
-                                </span>
-                                ${isLocalOnly ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 shrink-0">محلي</span>' : ''}
-                            </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-extrabold text-slate-800 dark:text-slate-100 text-base sm:text-lg break-words">${escapeHtml(c.name)}</span>
+                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-lg border ${appInfo.badgeClass}">
+                                ${appInfo.label}
+                            </span>
+                            ${isLocalOnly ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300">محلي</span>' : ''}
                         </div>
-                        <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5">
+                        <div class="flex flex-wrap items-center gap-1.5">
                             <button type="button" onclick="shareClientLink('${c.id}')"
-                                class="col-span-2 sm:col-span-1 bg-sky-500 hover:bg-sky-600 text-white font-bold px-3 py-2 rounded-xl text-xs transition flex items-center justify-center gap-1 min-h-[38px]">
+                                class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1 min-h-[38px]">
                                 <span>🔗 مشاركة للعميل</span>
                             </button>
                             <a href="${appInfo.url}" target="_blank" rel="noopener noreferrer"
                                 onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك وفتح الموقع')"
-                                class="col-span-2 sm:col-span-1 ${appInfo.btnClass} font-bold px-3 py-2 rounded-xl text-xs transition text-center flex items-center justify-center min-h-[38px]">
+                                class="${appInfo.btnClass} font-bold px-3 py-2 rounded-xl text-xs transition flex items-center min-h-[38px]">
                                 ${appInfo.btnText}
                             </a>
                             <button type="button" onclick="editClient('${c.id}')"
-                                class="bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 font-bold px-3 py-2 rounded-xl text-xs transition min-h-[38px]">
+                                class="bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 font-bold px-3 py-2 rounded-xl text-xs transition min-h-[38px]">
                                 تعديل
                             </button>
                             <button type="button" onclick="deleteClient('${c.id}')"
@@ -1055,13 +1283,15 @@
                         </div>
                     </div>
 
+                    ${pulseDurationHtml}
+
                     <div class="bg-slate-50/90 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200/70 dark:border-slate-700/70 space-y-2.5">
                         <span class="text-[11px] font-extrabold text-indigo-700 dark:text-indigo-300 block">📱 بيانات العميل (التطبيق)</span>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/70 flex items-center justify-between gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2">
                                 <div class="overflow-hidden min-w-0">
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-400 block font-bold">MAC</span>
-                                    <code class="text-xs sm:text-sm font-bold text-indigo-700 dark:text-indigo-400 mono block truncate" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">${escapeHtml(c.mac)}</code>
+                                    <span class="text-[10px] text-slate-400 block font-bold">MAC</span>
+                                    <code class="text-xs sm:text-sm font-bold text-indigo-700 dark:text-indigo-400 mono inline-block truncate max-w-full" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">${escapeHtml(c.mac)}</code>
                                 </div>
                                 <button type="button" onclick="copyText('${escapeHtml(c.mac)}', 'تم نسخ الماك')"
                                     class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0 transition min-h-[36px]">
@@ -1069,10 +1299,10 @@
                                 </button>
                             </div>
 
-                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/70 flex items-center justify-between gap-2">
+                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2">
                                 <div class="overflow-hidden min-w-0">
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-400 block font-bold">الرقم السري للتطبيق (Key)</span>
-                                    <code class="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 mono block truncate" dir="ltr">${escapeHtml(c.key)}</code>
+                                    <span class="text-[10px] text-slate-400 block font-bold">الرقم السري للتطبيق (Key)</span>
+                                    <code class="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 mono truncate block" dir="ltr">${escapeHtml(c.key)}</code>
                                 </div>
                                 <button type="button" onclick="copyText('${escapeHtml(c.key)}', 'تم نسخ الرقم السري للتطبيق')"
                                     class="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0 transition min-h-[36px]">
@@ -1082,18 +1312,18 @@
                         </div>
                     </div>
 
-                    <div class="bg-amber-50/70 dark:bg-amber-950/25 p-3 rounded-xl border border-amber-200/80 dark:border-amber-800/50 space-y-2.5">
+                    <div class="bg-amber-50/70 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200/80 dark:border-amber-800/40 space-y-2.5">
                         <span class="text-[11px] font-extrabold text-amber-900 dark:text-amber-300 block">🔑 بيانات الاشتراك</span>
                         
                         ${hostsHtml}
 
                         ${hasSubDetails ? `
-                        <div class="grid grid-cols-1 ${c.subNum && c.subPass ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} gap-2 pt-0.5">
+                        <div class="grid grid-cols-1 ${c.subNum && c.subPass ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} gap-2.5 pt-0.5">
                             ${c.subNum ? `
-                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-amber-200/70 dark:border-amber-800/50 flex items-center justify-between gap-2">
+                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-amber-200/70 dark:border-amber-800/40 flex items-center justify-between gap-2">
                                 <div class="overflow-hidden min-w-0">
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-400 block font-bold">رقم الاشتراك (Username)</span>
-                                    <code class="text-xs sm:text-sm font-bold text-teal-700 dark:text-teal-400 mono block truncate" dir="ltr">${escapeHtml(c.subNum)}</code>
+                                    <span class="text-[10px] text-slate-400 block font-bold">رقم الاشتراك (Username)</span>
+                                    <code class="text-xs sm:text-sm font-bold text-teal-700 dark:text-teal-400 mono truncate block" dir="ltr">${escapeHtml(c.subNum)}</code>
                                 </div>
                                 <button type="button" onclick="copyText('${escapeHtml(c.subNum)}', 'تم نسخ رقم الاشتراك')"
                                     class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0 transition min-h-[36px]">
@@ -1103,10 +1333,10 @@
                             ` : ''}
 
                             ${c.subPass ? `
-                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-amber-200/70 dark:border-amber-800/50 flex items-center justify-between gap-2">
+                            <div class="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-amber-200/70 dark:border-amber-800/40 flex items-center justify-between gap-2">
                                 <div class="overflow-hidden min-w-0">
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-400 block font-bold">الرقم السري للاشتراك (Password)</span>
-                                    <code class="text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-400 mono block truncate" dir="ltr">${escapeHtml(c.subPass)}</code>
+                                    <span class="text-[10px] text-slate-400 block font-bold">الرقم السري للاشتراك (Password)</span>
+                                    <code class="text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-400 mono truncate block" dir="ltr">${escapeHtml(c.subPass)}</code>
                                 </div>
                                 <button type="button" onclick="copyText('${escapeHtml(c.subPass)}', 'تم نسخ الرقم السري للاشتراك')"
                                     class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0 transition min-h-[36px]">
@@ -1141,6 +1371,8 @@
                     key: c.key,
                     subNum: c.subNum || '',
                     subPass: c.subPass || '',
+                    subStart: c.subStart || '',
+                    subEnd: c.subEnd || '',
                     createdAt: Number(c.createdAt) || Date.now()
                 }))
             };
@@ -1208,6 +1440,8 @@
                         const keyClean = String(item.key).trim();
                         const subNumClean = item.subNum ? String(item.subNum).trim() : '';
                         const subPassClean = item.subPass ? String(item.subPass).trim() : '';
+                        const subStartClean = item.subStart ? String(item.subStart).trim() : '';
+                        const subEndClean = item.subEnd ? String(item.subEnd).trim() : '';
 
                         const exists = clients.some(c =>
                             (c.app || 'ibo') === appType &&
@@ -1223,6 +1457,8 @@
                                 key: keyClean,
                                 subNum: subNumClean,
                                 subPass: subPassClean,
+                                subStart: subStartClean,
+                                subEnd: subEndClean,
                                 createdAt: Number(item.createdAt) || Date.now()
                             };
                             clients.unshift(newClient);
@@ -1236,6 +1472,8 @@
                                     key: keyClean,
                                     subNum: subNumClean,
                                     subPass: subPassClean,
+                                    subStart: subStartClean,
+                                    subEnd: subEndClean,
                                     createdAt: newClient.createdAt
                                 });
                             } catch (err) {}
@@ -1293,6 +1531,8 @@
                 k: client.key,
                 u: client.subNum || '',
                 p: client.subPass || '',
+                s: client.subStart || '',
+                e: client.subEnd || '',
                 h: dailyHosts.map(h => [h.label || '', h.url])
             };
 
@@ -1321,16 +1561,91 @@
             const badgeEl = document.getElementById('clientViewAppBadge');
             badgeEl.textContent = appInfo.label;
             badgeEl.className = appType === 'shamel'
-                ? 'text-xs font-extrabold px-3 py-1 rounded-xl bg-emerald-400 text-slate-900 shadow-sm'
-                : 'text-xs font-extrabold px-3 py-1 rounded-xl bg-amber-400 text-slate-900 shadow-sm';
+                ? 'text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-emerald-400 text-slate-900 shadow-sm'
+                : 'text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl bg-amber-400 text-slate-900 shadow-sm';
 
             document.getElementById('cvClientName').textContent = shared.name;
 
             const siteBtn = document.getElementById('cvOfficialSiteBtn');
             siteBtn.href = appInfo.url;
-            siteBtn.className = `${appInfo.btnClass} font-extrabold px-3.5 py-2 rounded-xl text-xs shadow-sm transition flex items-center gap-1.5`;
+            siteBtn.className = `w-full sm:w-auto justify-center ${appInfo.btnClass} font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 min-h-[42px]`;
             siteBtn.innerHTML = `<span>${appInfo.btnText}</span>`;
             siteBtn.onclick = () => copyText(shared.mac, 'تم نسخ الماك وفتح الموقع');
+
+            function updateClientViewPulse() {
+                if (!shared.subStart && !shared.subEnd) return;
+                const sec = document.getElementById('cvDurationSection');
+                sec.classList.remove('hidden');
+
+                if (shared.subStart) {
+                    const sb = document.getElementById('cvStartDateBadge');
+                    sb.classList.remove('hidden');
+                    sb.textContent = `🟢 البداية: ${formatDisplayDate(shared.subStart)}`;
+                }
+                if (shared.subEnd) {
+                    const eb = document.getElementById('cvEndDateBadge');
+                    eb.classList.remove('hidden');
+                    eb.textContent = `🔴 النهاية: ${formatDisplayDate(shared.subEnd)}`;
+                }
+
+                const rem = calculateRemainingBreakdown(shared.subEnd);
+                const pingEl = document.getElementById('cvPulsePing');
+                const dotEl = document.getElementById('cvPulseDot');
+                const labelEl = document.getElementById('cvDurationStatusLabel');
+                const gridEl = document.getElementById('cvCountdownGrid');
+
+                if (!rem) {
+                    sec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 space-y-3';
+                    labelEl.textContent = '📅 تواريخ الاشتراك';
+                    gridEl.classList.add('hidden');
+                    return;
+                }
+
+                if (rem.expired) {
+                    sec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-rose-50/90 dark:bg-rose-950/35 border-rose-300 dark:border-rose-800/70 pulse-expired space-y-3';
+                    pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75';
+                    dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-rose-500';
+                    labelEl.className = 'text-xs sm:text-sm font-extrabold text-rose-700 dark:text-rose-300';
+                    labelEl.textContent = '⛔ انتهت مدة الاشتراك';
+                } else if (rem.totalHours <= 24 * 7) {
+                    sec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-amber-50/90 dark:bg-amber-950/35 border-amber-300 dark:border-amber-700/70 pulse-warning space-y-3';
+                    pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75';
+                    dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-amber-500';
+                    labelEl.className = 'text-xs sm:text-sm font-extrabold text-amber-800 dark:text-amber-300';
+                    labelEl.textContent = '⚠️ ينتهي الاشتراك قريباً • المتبقي';
+                } else {
+                    sec.className = 'rounded-2xl p-3.5 sm:p-4 border bg-emerald-50/90 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 pulse-active space-y-3';
+                    pingEl.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
+                    dotEl.className = 'relative inline-flex rounded-full h-3 w-3 bg-emerald-500';
+                    labelEl.className = 'text-xs sm:text-sm font-extrabold text-emerald-800 dark:text-emerald-300';
+                    labelEl.textContent = 'الاشتراك ساري • المدة المتبقية';
+                }
+
+                const numColor = rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100';
+                gridEl.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                        <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.years}</span>
+                        <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">سنة</span>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                        <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.months}</span>
+                        <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">شهر</span>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                        <span class="block text-base sm:text-lg font-extrabold mono ${numColor}">${rem.days}</span>
+                        <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">يوم</span>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 rounded-xl py-2 px-1 border border-black/5 dark:border-white/5 shadow-xs">
+                        <span class="block text-base sm:text-lg font-extrabold mono ${rem.expired ? 'text-rose-600 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'}">${rem.hours}</span>
+                        <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">ساعة</span>
+                    </div>
+                `;
+            }
+
+            updateClientViewPulse();
+            if (shared.subEnd) {
+                setInterval(updateClientViewPulse, 60000);
+            }
 
             document.getElementById('cvMacValue').textContent = shared.mac;
             document.getElementById('cvCopyMacBtn').onclick = () => copyText(shared.mac, 'تم نسخ الماك');
@@ -1343,7 +1658,7 @@
 
             if (validHosts.length > 0) {
                 hostsListEl.innerHTML = validHosts.map((h, idx) => `
-                    <div class="bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-800/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                    <div class="bg-white dark:bg-slate-900 p-3 sm:p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div class="overflow-hidden min-w-0">
                             <span class="text-[11px] text-amber-800 dark:text-amber-300 block font-extrabold">🌐 ${escapeHtml(h.label || ('رابط السيرفر / الهوست ' + (idx + 1)))}</span>
                             <code class="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 mono block truncate mt-0.5" dir="ltr">${escapeHtml(h.url)}</code>
@@ -1388,6 +1703,8 @@
                 }
                 if (shared.subNum) lines.push(`Username: ${shared.subNum}`);
                 if (shared.subPass) lines.push(`Password: ${shared.subPass}`);
+                if (shared.subStart) lines.push(`بداية الاشتراك: ${formatDisplayDate(shared.subStart)}`);
+                if (shared.subEnd) lines.push(`نهاية الاشتراك: ${formatDisplayDate(shared.subEnd)}`);
                 copyText(lines.join('\n'), 'تم نسخ جميع البيانات بنجاح');
             };
         }
@@ -1406,6 +1723,8 @@
                         key: raw.k || raw.key || '',
                         subNum: raw.u !== undefined ? raw.u : (raw.subNum || ''),
                         subPass: raw.p !== undefined ? raw.p : (raw.subPass || ''),
+                        subStart: raw.s !== undefined ? raw.s : (raw.subStart || ''),
+                        subEnd: raw.e !== undefined ? raw.e : (raw.subEnd || ''),
                         hosts: Array.isArray(raw.h)
                             ? raw.h.map(item => Array.isArray(item) ? { label: item[0], url: item[1] } : item)
                             : (raw.hosts || [])
@@ -1421,6 +1740,11 @@
             }
 
             initCloudSync();
+            setInterval(() => {
+                if (clients.some(c => c.subEnd)) {
+                    renderList();
+                }
+            }, 60000);
         }
 
         checkRouteMode();
